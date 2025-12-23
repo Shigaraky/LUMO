@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reindirizzamento LUMO</title>
+    <script>
+        // Reindirizza alla pagina principale
+        const path = window.location.pathname;
+        const isRoot = path === '/' || path.endsWith('/index.html') || path.endsWith('/404.html');
+        
+        if (!isRoot) {
+            // Reindirizza alla home page
+            window.location.href = './';
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .spinner {
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 5px solid white;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 LUMO - Reindirizzamento in corso</h1>
+        <p>Stai per essere reindirizzato alla pagina principale dell'app...</p>
+        <div class="spinner"></div>
+        <p>Se il reindirizzamento non funziona, <a href="./" style="color: #38ef7d; text-decoration: underline;">clicca qui</a></p>
+    </div>
+    
+    <script>
+        // Fallback: reindirizza dopo 3 secondi
+        setTimeout(() => {
+            window.location.href = './';
+        }, 3000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+/* Alto Contrasto per Accessibilità */
+
+/* Testo su sfondi scuri */
+[data-theme="dark"] .month-income,
+[data-theme="dark"] .card.green .amount,
+[data-theme="dark"] .balance-positive {
+  color: #6EFFB3 !important;
+}
+
+[data-theme="dark"] .month-expense,
+[data-theme="dark"] .card.red .amount,
+[data-theme="dark"] .balance-negative {
+  color: #FF9EAA !important;
+}
+
+/* Focus states ad alto contrasto */
+input:focus, 
+select:focus, 
+textarea:focus,
+button:focus,
+.pin-input:focus {
+  outline: 3px solid var(--primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* Miglioramento contrasto per testo secondario */
+[data-theme="dark"] .text-secondary {
+  color: #CBD5E1 !important;
+}
+
+/* Controlli form ad alto contrasto */
+.form-control {
+  border-color: #94A3B8 !important;
+}
+
+[data-theme="dark"] .form-control {
+  border-color: #64748B !important;
+}
+
+/* Badge ad alto contrasto */
+[data-theme="dark"] .badge-category {
+  background: rgba(99, 102, 241, 0.2) !important;
+}
+
+[data-theme="dark"] .badge-account {
+  background: rgba(139, 92, 246, 0.2) !important;
+}

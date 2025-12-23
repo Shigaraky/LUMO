@@ -1,0 +1,3796 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LUMO - Il tuo budget illuminato</title>
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#6366F1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="./manifest.json">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="./css/lumo-styles.css">
+  <link rel="stylesheet" href="./css/theme-system.css">
+  <link rel="stylesheet" href="./css/wcag-colors.css">
+  <link rel="stylesheet" href="./css/pin-system.css">
+
+  <!-- Font Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Stile Principale -->
+  <style>
+    /* Animazioni globali */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    /* Stili specifici per chart - RIDOTTO */
+    .chart-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      background: var(--surface-card);
+      border-radius: 16px;
+      border: 2px dashed var(--border-color);
+      color: var(--text-secondary);
+      font-size: 14px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* CHART CONTAINER RIDOTTO */
+    .chart-container {
+      background: var(--surface-card);
+      padding: 15px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      height: 300px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-container h2 {
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      color: var(--text-primary);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .chart-container canvas {
+      flex: 1;
+      max-height: 250px !important;
+      width: 100% !important;
+    }
+
+    /* Badge per stati */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .status-active {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10B981;
+    }
+
+    .status-inactive {
+      background: rgba(239, 68, 68, 0.15);
+      color: #EF4444;
+    }
+
+    /* Progress bar migliorata */
+    .progress-container {
+      background: var(--border-color);
+      border-radius: 10px;
+      height: 8px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.6s ease;
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: relative;
+      cursor: help;
+    }
+
+    .tooltip:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface-dark);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1000;
+      margin-bottom: 5px;
+    }
+
+    /* Loading spinner */
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Transazioni recenti nella dashboard */
+    .recent-transactions {
+      background: var(--surface-card);
+      border-radius: 16px;
+      padding: 15px;
+      border: 1px solid var(--border-color);
+      margin-top: 15px;
+    }
+
+    .recent-transactions h3 {
+      margin-bottom: 12px;
+      color: var(--text-primary);
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .transaction-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .transaction-item:last-child {
+      border-bottom: none;
+    }
+
+    .transaction-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .transaction-amount {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    /* Card hover effects */
+    .card-hover-effect {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-hover-effect:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 15px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    /* Quick actions */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .quick-action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-height: 80px;
+    }
+
+    .quick-action-btn:hover {
+      background: var(--surface-color);
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .quick-action-btn div {
+      font-size: 20px;
+      margin-bottom: 6px;
+      color: var(--primary);
+    }
+
+    .quick-action-btn span {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* NUOVI STILI PER SPESE RATEIZZATE */
+    .installment-info {
+      background: rgba(99, 102, 241, 0.1);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .installment-tag {
+      display: inline-flex;
+      align-items: center;
+      background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    .installment-controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      align-items: center;
+    }
+
+    .installment-controls.hidden {
+      display: none;
+    }
+
+    .installment-summary {
+      display: flex;
+      justify-content: space-between;
+      background: rgba(99, 102, 241, 0.05);
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+
+    .monthly-installment {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* Stili per scadenza spese fisse */
+    .expiry-info {
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .remaining-cost {
+      color: var(--accent-red);
+      font-weight: 700;
+    }
+
+    .expired-badge {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--accent-red);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Stili per trasferimenti */
+    .transfer-badge {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--accent-cyan);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .transfer-arrow {
+      color: var(--accent-cyan);
+      font-weight: bold;
+      margin: 0 8px;
+    }
+
+    .transfer-accounts {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    /* FOOTER */
+    .app-footer {
+      text-align: center;
+      padding: 15px 20px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      border-top: 1px solid var(--border-color);
+      margin-top: 20px;
+      background: var(--surface-card);
+      border-radius: 0 0 20px 20px;
+    }
+
+    .app-footer p {
+      margin: 0;
+      opacity: 0.7;
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      .chart-container {
+        height: 250px;
+        padding: 12px;
+      }
+      
+      .chart-container h2 {
+        font-size: 1rem;
+        margin-bottom: 10px;
+      }
+      
+      .hide-on-mobile {
+        display: none !important;
+      }
+      
+      .mobile-full-width {
+        width: 100% !important;
+      }
+      
+      .mobile-stack {
+        flex-direction: column !important;
+        gap: 10px !important;
+      }
+      
+      .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      
+      .quick-action-btn {
+        min-height: 70px;
+        padding: 10px;
+      }
+      
+      .quick-action-btn div {
+        font-size: 18px;
+      }
+      
+      .quick-action-btn span {
+        font-size: 12px;
+      }
+      
+      .installment-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .transfer-accounts {
+        flex-direction: column;
+        gap: 4px;
+      }
+      
+      .transfer-arrow {
+        margin: 0;
+        transform: rotate(90deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- OVERLAY PIN -->
+  <div id="pinOverlay" class="pin-overlay" style="display: none;">
+    <div id="pinSetupScreen" class="pin-box">
+      <h3>🔐 Crea il tuo PIN</h3>
+      <p class="pin-instructions">
+        Crea un PIN di 4-6 cifre per proteggere i tuoi dati finanziari.
+      </p>
+      <input type="password" inputmode="numeric" maxlength="6" id="pinSetupInput" 
+             placeholder="Inserisci PIN (4-6 cifre)" class="pin-input">
+      <input type="password" inputmode="numeric" maxlength="6" id="pinSetupConfirm" 
+             placeholder="Conferma PIN" class="pin-input">
+      <div class="pin-error" id="pinSetupError"></div>
+      <button class="btn" id="pinSetupButton">Crea PIN</button>
+      <p style="font-size: 12px; margin-top: 15px; color: var(--text-secondary);">
+        Il PIN verrà memorizzato localmente sul tuo dispositivo.
+      </p>
+    </div>
+
+    <div id="pinLoginScreen" class="pin-box" style="display: none;">
+      <h3>🔐 Inserisci il PIN</h3>
+      <p class="pin-instructions">
+        Inserisci il PIN per accedere ai tuoi dati.
+      </p>
+      <input type="password" inputmode="numeric" maxlength="6" id="pinLoginInput" 
+             placeholder="PIN (4-6 cifre)" class="pin-input">
+      <div class="pin-error" id="pinLoginError"></div>
+      <button class="btn" id="pinLoginButton">Accedi</button>
+      <div class="pin-footer" id="forgotPinLink" style="margin-top: 15px;">
+        Hai dimenticato il PIN? (Reset)
+      </div>
+    </div>
+
+    <div id="pinResetScreen" class="pin-box" style="display: none;">
+      <h3>🔐 Reset PIN</h3>
+      <p class="pin-instructions">
+        ATTENZIONE: Reset del PIN eliminerà tutti i dati locali.<br>
+        Crea un nuovo PIN.
+      </p>
+      <input type="password" inputmode="numeric" maxlength="6" id="pinResetInput" 
+             placeholder="Nuovo PIN (4-6 cifre)" class="pin-input">
+      <input type="password" inputmode="numeric" maxlength="6" id="pinResetConfirm" 
+             placeholder="Conferma nuovo PIN" class="pin-input">
+      <div class="pin-error" id="pinResetError"></div>
+      <button class="btn btn-danger" id="pinResetButton">Reset PIN & Dati</button>
+      <div class="pin-footer" id="backToLoginLink" style="margin-top: 15px;">
+        ← Torna al login
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENITORE PRINCIPALE -->
+  <div class="container" id="mainContainer" style="display: none;">
+    <!-- HEADER RIVEDUTO -->
+    <div class="header">
+      <button class="theme-toggle-header" id="themeToggle">🌙</button>
+      <div class="logo">
+        <div class="logo-icon">💡</div>
+        <div class="logo-text">LUMO</div>
+      </div>
+      <p class="tagline">Il punto luce sul tuo budget</p>
+    </div>
+
+    <!-- SELEZIONE UTENTE -->
+    <div class="user-selector">
+      <select id="userSelect" class="form-control">
+        <option value="default">Profilo Predefinito</option>
+      </select>
+      <button id="addUserBtn" class="btn btn-small">+ Nuovo Profilo</button>
+      <button id="changePinBtn" class="btn btn-small btn-info">
+        🔐 Cambia PIN
+      </button>
+    </div>
+
+    <!-- TABS NAVIGATION -->
+    <div class="tabs">
+      <button class="tab active" data-tab="dashboard">
+        <span>📊 Dashboard</span>
+      </button>
+      <button class="tab" data-tab="transactions">
+        <span>💳 Transazioni</span>
+      </button>
+      <button class="tab" data-tab="recurring">
+        <span>🔄 Spese Fisse</span>
+      </button>
+      <button class="tab" data-tab="savings">
+        <span>🏦 Risparmi</span>
+      </button>
+      <button class="tab" data-tab="categories">
+        <span>🏷️ Categorie</span>
+      </button>
+      <button class="tab" data-tab="accounts">
+        <span>💰 Conti</span>
+      </button>
+      <button class="tab" data-tab="transfers">
+        <span>🔄 Trasferimenti</span>
+      </button>
+      <button class="tab" data-tab="annual">
+        <span>📈 Annuale</span>
+      </button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="tab-content active">
+      <div class="summary-cards">
+        <div class="card green card-hover-effect">
+          <h3>SALDO TOTALE</h3>
+          <div class="amount" id="totalBalance">€0.00</div>
+        </div>
+        <div class="card blue card-hover-effect">
+          <h3>ENTRATE MENSILI</h3>
+          <div class="amount" id="monthlyIncome">€0.00</div>
+        </div>
+        <div class="card red card-hover-effect">
+          <h3>USCITE MENSILI</h3>
+          <div class="amount" id="monthlyExpenses">€0.00</div>
+        </div>
+      </div>
+
+      <div class="summary-cards" id="accountCards"></div>
+      <div class="summary-cards" id="budgetCards"></div>
+
+      <!-- TRANSACTION CHART -->
+      <div class="chart-container">
+        <h2>📊 Spese per Categoria</h2>
+        <canvas id="expensesChart"></canvas>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="quick-actions">
+        <div class="quick-action-btn" onclick="switchTab('transactions')">
+          <div>➕</div>
+          <span>Nuova Transazione</span>
+        </div>
+        <div class="quick-action-btn" onclick="switchTab('transfers')">
+          <div>🔄</div>
+          <span>Trasferimento</span>
+        </div>
+        <div class="quick-action-btn" onclick="switchTab('savings')">
+          <div>🏦</div>
+          <span>Nuovo Risparmio</span>
+        </div>
+        <div class="quick-action-btn" onclick="switchTab('recurring')">
+          <div>🔄</div>
+          <span>Spese Fisse</span>
+        </div>
+        <div class="quick-action-btn" onclick="exportCSV()">
+          <div>📤</div>
+          <span>Esporta Dati</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSAZIONI -->
+    <div id="transactions" class="tab-content">
+      <div class="form-section">
+        <h2>➕ Nuova Transazione</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="transType" class="form-control">
+              <option value="expense">Spesa</option>
+              <option value="income">Entrata</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Data</label>
+            <input type="date" id="transDate" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Importo (€)</label>
+            <input type="text" inputmode="decimal" id="transAmount" 
+                   placeholder="0,00" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Categoria</label>
+            <select id="transCategory" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label>Conto</label>
+            <select id="transAccount" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label>Descrizione</label>
+            <input type="text" id="transDescription" 
+                   placeholder="Descrizione..." class="form-control">
+          </div>
+          
+          <!-- NUOVO: SPESA RATEIZZATA -->
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="transInstallment">
+              <span>Spesa Rateizzata (Klarna, PayPal, ecc.)</span>
+            </label>
+          </div>
+          
+          <div class="form-group installment-controls hidden" id="installmentControls">
+            <div style="flex: 1;">
+              <label>Numero di mesi</label>
+              <input type="number" id="transInstallmentMonths" min="2" max="120" 
+                     value="3" class="form-control" style="padding: 10px;">
+            </div>
+            <div style="flex: 1; text-align: center; padding-top: 20px;">
+              <div id="installmentPreview" style="font-size: 14px; color: var(--text-secondary);">
+                Rata mensile: <span id="monthlyInstallment">€0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button class="btn" id="addTransactionBtn">Aggiungi Transazione</button>
+          <button class="btn btn-danger" id="cancelEditBtn" style="display: none;">
+            Annulla Modifica
+          </button>
+        </div>
+      </div>
+
+      <!-- FILTRI -->
+      <div class="filters">
+        <div class="filter-group">
+          <label>Cerca Descrizione</label>
+          <input type="text" id="searchDescription" placeholder="Cerca..." class="form-control">
+        </div>
+        <div class="filter-group">
+          <label>Categoria</label>
+          <select id="filterCategory" class="form-control">
+            <option value="">Tutte</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Conto</label>
+          <select id="filterAccount" class="form-control">
+            <option value="">Tutti</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Tipo</label>
+          <select id="filterType" class="form-control">
+            <option value="">Tutti</option>
+            <option value="expense">Spese</option>
+            <option value="income">Entrate</option>
+            <option value="transfer">Trasferimenti</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Rateizzata</label>
+          <select id="filterInstallment" class="form-control">
+            <option value="">Tutte</option>
+            <option value="yes">Solo rateizzate</option>
+            <option value="no">Non rateizzate</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- TABELLA TRANSAZIONI -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Azioni</th>
+              <th>Data</th>
+              <th>Descrizione</th>
+              <th>Categoria</th>
+              <th>Conto / Dettagli</th>
+              <th>Importo</th>
+              <th>Rate</th>
+            </tr>
+          </thead>
+          <tbody id="transactionsTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SPESE FISSE -->
+    <div id="recurring" class="tab-content">
+      <div class="form-section">
+        <h2>🔄 Nuova Spesa/Entrata Fissa Mensile</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="recurType" class="form-control">
+              <option value="expense">Spesa</option>
+              <option value="income">Entrata</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Nome</label>
+            <input type="text" id="recurName" 
+                   placeholder="Es. Affitto, Stipendio..." class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Importo (€)</label>
+            <input type="text" inputmode="decimal" id="recurAmount" 
+                   placeholder="0,00" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Giorno del Mese</label>
+            <input type="number" min="1" max="31" id="recurDay" 
+                   placeholder="1-31" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Categoria</label>
+            <select id="recurCategory" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label>Conto</label>
+            <select id="recurAccount" class="form-control"></select>
+          </div>
+          
+          <!-- NUOVO: SCADENZA SPESA FISSA -->
+          <div class="form-group">
+            <label>Scadenza (opzionale)</label>
+            <input type="date" id="recurEndDate" class="form-control">
+            <small style="color: var(--text-secondary); font-size: 12px;">
+              Per mutui, finanziamenti, spese a termine
+            </small>
+          </div>
+          
+          <div class="form-group" id="remainingCostInfo" style="display: none;">
+            <div class="expiry-info">
+              <div style="display: flex; justify-content: space-between;">
+                <span>Mesi rimanenti:</span>
+                <span id="remainingMonths">0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                <span>Costo residuo:</span>
+                <span class="remaining-cost" id="remainingCost">€0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="btn" id="addRecurringBtn">Aggiungi Voce Fissa</button>
+        <button class="btn btn-small btn-warning" id="forceRecurringBtn" style="margin-top: 10px;">
+          🔄 Forza Registrazione Spese Fisse
+        </button>
+      </div>
+
+      <!-- TABELLA SPESE FISSE -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Azioni</th>
+              <th>Nome</th>
+              <th>Tipo</th>
+              <th>Importo</th>
+              <th>Giorno</th>
+              <th>Categoria</th>
+              <th>Conto</th>
+              <th>Scadenza</th>
+              <th>Costo Residuo</th>
+              <th>Stato</th>
+            </tr>
+          </thead>
+          <tbody id="recurringTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RISPARMI -->
+    <div id="savings" class="tab-content">
+      <div class="form-section">
+        <h2>🏦 Nuovo Conto Risparmio</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nome Conto</label>
+            <input type="text" id="savingName" 
+                   placeholder="Es. Fondo Emergenze..." class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Saldo Iniziale (€)</label>
+            <input type="text" inputmode="decimal" id="savingAmount" 
+                   placeholder="0,00" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Obiettivo (€) - Opzionale</label>
+            <input type="text" inputmode="decimal" id="savingGoal" 
+                   placeholder="0,00" class="form-control">
+          </div>
+        </div>
+        <button class="btn" id="addSavingBtn">Aggiungi Conto Risparmio</button>
+      </div>
+
+      <!-- TABELLA RISPARMI -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Azioni</th>
+              <th>Nome Conto</th>
+              <th>Saldo</th>
+              <th>Obiettivo</th>
+              <th>Progresso</th>
+            </tr>
+          </thead>
+          <tbody id="savingsTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CATEGORIE -->
+    <div id="categories" class="tab-content">
+      <div class="form-section">
+        <h2>🏷️ Gestione Categorie</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nome Categoria</label>
+            <input type="text" id="newCategory" 
+                   placeholder="Es. Alimentari, Trasporti..." class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Budget Mensile (€)</label>
+            <input type="text" inputmode="decimal" id="categoryBudget" 
+                   placeholder="Opzionale" class="form-control">
+          </div>
+        </div>
+        <button class="btn" id="addCategoryBtn">Aggiungi Categoria</button>
+      </div>
+
+      <!-- TABELLA CATEGORIE -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Azioni</th>
+              <th>Categoria</th>
+              <th>Budget Mensile</th>
+            </tr>
+          </thead>
+          <tbody id="categoriesTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CONTI -->
+    <div id="accounts" class="tab-content">
+      <div class="form-section">
+        <h2>💰 Gestione Conti</h2>
+        <p style="margin-bottom: 20px; color: var(--text-secondary);">
+          Rinomina, elimina o aggiungi nuovi conti. I saldi sono calcolati automaticamente dalle transazioni.
+        </p>
+        <div class="form-grid" style="margin-bottom: 25px;">
+          <div class="form-group">
+            <label>Nome nuovo conto</label>
+            <input type="text" id="newAccountName" 
+                   placeholder="Es. Banca Widiba, N26, Fineco..." class="form-control">
+          </div>
+        </div>
+        <button class="btn" id="addAccountBtn">+ Aggiungi Conto</button>
+
+        <!-- TABELLA CONTI -->
+        <div class="table-container" style="margin-top: 30px;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID Conto</th>
+                <th>Nome Personalizzato</th>
+                <th>Saldo Attuale</th>
+                <th>Elimina</th>
+              </tr>
+            </thead>
+            <tbody id="accountsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRASFERIMENTI -->
+    <div id="transfers" class="tab-content">
+      <div class="form-section">
+        <h2>🔄 Nuovo Trasferimento</h2>
+        <p style="margin-bottom: 20px; color: var(--text-secondary);">
+          Trasferisci denaro da un conto a un altro. I trasferimenti non influenzano le entrate/uscite totali.
+        </p>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Data</label>
+            <input type="date" id="transferDate" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Importo (€)</label>
+            <input type="text" inputmode="decimal" id="transferAmount" 
+                   placeholder="0,00" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Da Conto</label>
+            <select id="transferFromAccount" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label>A Conto</label>
+            <select id="transferToAccount" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label>Descrizione (opzionale)</label>
+            <input type="text" id="transferDescription" 
+                   placeholder="Es. Bonifico mensile, Prelievo..." class="form-control">
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-info" id="addTransferBtn">Aggiungi Trasferimento</button>
+          <button class="btn btn-danger" id="cancelTransferEditBtn" style="display: none;">
+            Annulla Modifica
+          </button>
+        </div>
+      </div>
+
+      <!-- TABELLA TRASFERIMENTI -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Azioni</th>
+              <th>Data</th>
+              <th>Descrizione</th>
+              <th>Da Conto</th>
+              <th>A Conto</th>
+              <th>Importo</th>
+            </tr>
+          </thead>
+          <tbody id="transfersTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ANNUALE -->
+    <div id="annual" class="tab-content">
+      <div class="summary-cards">
+        <div class="card green card-hover-effect">
+          <h3>TOTALE ENTRATE ANNUALI</h3>
+          <div class="amount" id="annualIncome">€0.00</div>
+        </div>
+        <div class="card red card-hover-effect">
+          <h3>TOTALE SPESE ANNUALI</h3>
+          <div class="amount" id="annualExpenses">€0.00</div>
+        </div>
+        <div class="card blue card-hover-effect">
+          <h3>SALDO ANNUALE</h3>
+          <div class="amount" id="annualBalance">€0.00</div>
+        </div>
+        <div class="card purple card-hover-effect">
+          <h3>MEDIA MENSILE</h3>
+          <div class="amount" id="monthlyAverage">€0.00</div>
+        </div>
+      </div>
+
+      <!-- GRAFICO ANNUALE -->
+      <div class="chart-container">
+        <h2>📈 Andamento Annuale - Entrate vs Spese</h2>
+        <canvas id="annualChart"></canvas>
+      </div>
+
+      <!-- FILTRO ANNO -->
+      <div class="filters">
+        <div class="filter-group">
+          <label>Anno</label>
+          <select id="yearSelect" class="form-control"></select>
+        </div>
+      </div>
+
+      <!-- BREAKDOWN MENSILE -->
+      <div class="monthly-breakdown" id="monthlyBreakdown"></div>
+
+      <!-- GRAFICO CATEGORIE ANNUALI -->
+      <div class="chart-container">
+        <h2>📊 Spese Annuali per Categoria</h2>
+        <canvas id="annualCategoryChart"></canvas>
+      </div>
+
+      <!-- ESPORTAZIONE ANNUALE -->
+      <div class="export-section">
+        <h3>📊 Esporta Dati Annuali</h3>
+        <p style="margin-bottom: 20px; color: var(--text-secondary);">
+          Scarica il report annuale in formato CSV
+        </p>
+        <button class="btn" id="exportAnnualBtn">Esporta Report Annuale</button>
+      </div>
+    </div>
+
+    <!-- ESPORTAZIONE GENERALE -->
+    <div class="export-section">
+      <h3>📤 Esporta i Tuoi Dati</h3>
+      <p style="margin-bottom: 20px; color: var(--text-secondary);">
+        Scarica i tuoi dati in formato CSV per importarli in Excel o Google Sheets
+      </p>
+      <button class="btn" id="exportCSVBtn">Esporta CSV</button>
+
+      <h3 style="margin-top: 30px;">💾 Backup Completo</h3>
+      <p style="margin-bottom: 20px; color: var(--text-secondary);">
+        Crea un backup completo dei tuoi dati per ripristinarli in seguito
+      </p>
+      <button class="btn btn-success" id="exportUserDataBtn">Esporta Backup</button>
+
+      <h3 style="margin-top: 30px;">📥 Importa Dati</h3>
+      <p style="margin-bottom: 20px; color: var(--text-secondary);">
+        Importa un backup precedente
+      </p>
+      <input type="file" id="importUserData" accept=".json" style="display: none;">
+      <button class="btn" id="importUserDataBtn">Importa Backup</button>
+    </div>
+
+    <!-- FOOTER CON CREDIT -->
+    <div class="app-footer">
+      <p>A cura di Matteo Pappalardo</p>
+    </div>
+  </div>
+
+  <!-- PULSANTE INSTALLA PWA -->
+  <button class="install-button" id="installButton">
+    <span>📱</span>
+    <span>Installa App</span>
+  </button>
+
+  <!-- LIBRERIE ESTERNE -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+
+  <!-- SISTEMA PIN -->
+  <script src="./js/pin-system.js"></script>
+
+  <!-- SCRIPT PRINCIPALE COMPLETO -->
+  <script>
+    // ==========================================
+    // LUMO - Script Principale (Con nuove funzionalità)
+    // ==========================================
+
+    // Variabili globali
+    let currentUser = 'default';
+    let users = {};
+    let editingTransactionId = null;
+    let editingRecurringId = null;
+    let editingSavingId = null;
+    let editingCategoryName = null;
+    let editingAccountId = null;
+    let editingTransferId = null;
+
+    // ==========================================
+    // INIZIALIZZAZIONE
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('LUMO - Inizializzazione app...');
+      
+      // 1. Verifica se il PIN è configurato
+      checkPinStatus().then(() => {
+        // 2. Inizializza il sistema tab
+        initTabs();
+        
+        // 3. Inizializza l'app
+        initializeApp();
+        
+        // 4. Configura event listeners
+        setupEventListeners();
+        
+        console.log('App LUMO inizializzata con successo!');
+      });
+    });
+
+    // ==========================================
+    // SISTEMA TAB
+    // ==========================================
+    function initTabs() {
+      const tabs = document.querySelectorAll('.tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const tabId = this.getAttribute('data-tab');
+          if (!tabId) return;
+          
+          // Rimuovi active da tutti
+          tabs.forEach(t => t.classList.remove('active'));
+          tabContents.forEach(tc => tc.classList.remove('active'));
+          
+          // Aggiungi active al tab cliccato
+          this.classList.add('active');
+          
+          // Mostra il contenuto con animazione
+          const activeContent = document.getElementById(tabId);
+          if (activeContent) {
+            activeContent.classList.add('active');
+            activeContent.style.animation = 'fadeInUp 0.4s ease';
+            updateTabContent(tabId);
+          }
+        });
+      });
+      
+      // Attiva il primo tab
+      const firstTab = document.querySelector('.tab.active');
+      if (firstTab) {
+        const firstTabId = firstTab.getAttribute('data-tab');
+        if (firstTabId) {
+          const firstContent = document.getElementById(firstTabId);
+          if (firstContent) {
+            firstContent.classList.add('active');
+          }
+        }
+      }
+    }
+
+    function switchTab(tabId) {
+      const tab = document.querySelector(`.tab[data-tab="${tabId}"]`);
+      if (tab) {
+        tab.click();
+      }
+    }
+
+    function updateTabContent(tabId) {
+      console.log('Aggiornamento tab:', tabId);
+      switch(tabId) {
+        case 'dashboard':
+          updateDashboard();
+          break;
+        case 'transactions':
+          updateTransactionsTable();
+          break;
+        case 'recurring':
+          updateRecurringTable();
+          break;
+        case 'savings':
+          updateSavingsTable();
+          break;
+        case 'categories':
+          updateCategoriesTable();
+          break;
+        case 'accounts':
+          updateAccountsTable();
+          break;
+        case 'transfers':
+          updateTransfersTable();
+          break;
+        case 'annual':
+          updateAnnualView();
+          break;
+      }
+    }
+
+    // ==========================================
+    // NUOVE FUNZIONI PER SPESE RATEIZZATE
+    // ==========================================
+    function updateInstallmentPreview() {
+      const amountInput = document.getElementById('transAmount');
+      const monthsInput = document.getElementById('transInstallmentMonths');
+      const previewElement = document.getElementById('monthlyInstallment');
+      
+      if (!amountInput || !monthsInput || !previewElement) return;
+      
+      const amountStr = amountInput.value.trim().replace(',', '.');
+      const months = parseInt(monthsInput.value) || 1;
+      
+      if (amountStr && !isNaN(parseFloat(amountStr))) {
+        const amount = parseFloat(amountStr);
+        const monthly = amount / months;
+        previewElement.textContent = '€' + monthly.toFixed(2);
+      } else {
+        previewElement.textContent = '€0.00';
+      }
+    }
+
+    function toggleInstallmentControls() {
+      const isInstallment = document.getElementById('transInstallment').checked;
+      const controls = document.getElementById('installmentControls');
+      const monthsInput = document.getElementById('transInstallmentMonths');
+      
+      if (controls) {
+        if (isInstallment) {
+          controls.classList.remove('hidden');
+          if (monthsInput) monthsInput.focus();
+        } else {
+          controls.classList.add('hidden');
+        }
+      }
+      
+      updateInstallmentPreview();
+    }
+
+    function calculateRemainingMonths(endDate) {
+      if (!endDate) return null;
+      
+      const today = new Date();
+      const end = new Date(endDate);
+      
+      if (end < today) return 0;
+      
+      let months = 0;
+      let current = new Date(today);
+      current.setDate(1); // Inizio mese
+      
+      while (current <= end) {
+        months++;
+        current.setMonth(current.getMonth() + 1);
+      }
+      
+      return months;
+    }
+
+    function calculateRemainingCost(rec) {
+      if (!rec.endDate) return null;
+      
+      const remainingMonths = calculateRemainingMonths(rec.endDate);
+      if (remainingMonths === null || remainingMonths <= 0) return 0;
+      
+      // Calcola quante transazioni sono già state generate per questa spesa fissa
+      const user = users[currentUser];
+      const generatedTransactions = user.transactions.filter(t => 
+        t.recurringId === rec.id && 
+        new Date(t.date) > new Date()
+      ).length;
+      
+      const remainingTransactions = Math.max(0, remainingMonths - generatedTransactions);
+      return remainingTransactions * rec.amount;
+    }
+
+    function updateRemainingCostPreview() {
+      const amountInput = document.getElementById('recurAmount');
+      const endDateInput = document.getElementById('recurEndDate');
+      const infoElement = document.getElementById('remainingCostInfo');
+      const remainingMonthsElement = document.getElementById('remainingMonths');
+      const remainingCostElement = document.getElementById('remainingCost');
+      
+      if (!amountInput || !endDateInput || !infoElement) return;
+      
+      const amountStr = amountInput.value.trim().replace(',', '.');
+      const endDate = endDateInput.value;
+      
+      if (endDate && amountStr && !isNaN(parseFloat(amountStr))) {
+        const amount = parseFloat(amountStr);
+        const remainingMonths = calculateRemainingMonths(endDate);
+        
+        if (remainingMonths !== null && remainingMonths > 0) {
+          const remainingCost = remainingMonths * amount;
+          remainingMonthsElement.textContent = remainingMonths;
+          remainingCostElement.textContent = '€' + remainingCost.toFixed(2);
+          infoElement.style.display = 'block';
+          return;
+        }
+      }
+      
+      infoElement.style.display = 'none';
+    }
+
+    // ==========================================
+    // GESTIONE SPESE FISSE AUTOMATICHE
+    // ==========================================
+    function processRecurringTransactions() {
+      const user = users[currentUser];
+      if (!user || !user.recurring) return;
+      
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+      const currentDay = now.getDate();
+      
+      // Per ogni spesa fissa attiva
+      user.recurring.forEach(rec => {
+        if (rec.active) {
+          // Controlla se è scaduta
+          if (rec.endDate) {
+            const endDate = new Date(rec.endDate);
+            if (endDate < now) {
+              rec.active = false;
+              return;
+            }
+          }
+          
+          // Controlla se questa spesa fissa è già stata registrata per il mese corrente
+          const alreadyProcessed = user.transactions.some(trans => {
+            const transDate = new Date(trans.date);
+            return trans.recurringId === rec.id && 
+                   transDate.getMonth() === currentMonth && 
+                   transDate.getFullYear() === currentYear;
+          });
+          
+          // Se non è stata ancora processata per questo mese E il giorno del mese è già passato
+          if (!alreadyProcessed && rec.day <= currentDay) {
+            // Crea una transazione reale per questo mese
+            const transactionDate = new Date(currentYear, currentMonth, rec.day);
+            
+            const transaction = {
+              id: Date.now() + Math.random(),
+              type: rec.type,
+              date: transactionDate.toISOString().split('T')[0],
+              amount: rec.amount,
+              category: rec.category,
+              account: rec.account,
+              description: `${rec.name} (spesa fissa)`,
+              recurringId: rec.id
+            };
+            
+            // Aggiungi alla lista delle transazioni
+            user.transactions.push(transaction);
+            console.log(`Spesa fissa processata: ${rec.name} - €${rec.amount}`);
+          }
+        }
+      });
+      
+      // Salva i dati aggiornati
+      saveUsers();
+    }
+
+    // ==========================================
+    // INIZIALIZZAZIONE APP
+    // ==========================================
+    function initializeApp() {
+      // 1. Carica utenti
+      loadUsers();
+      
+      // 2. Imposta tema
+      initializeTheme();
+      
+      // 3. Imposta data odierna
+      setCurrentDate();
+      
+      // 4. Inizializza PWA
+      initializePWA();
+      
+      // 5. Aggiorna dashboard
+      updateDashboard();
+      
+      // 6. Mostra il contenuto principale
+      document.getElementById('mainContainer').style.display = 'block';
+    }
+
+    function setCurrentDate() {
+      const today = new Date().toISOString().split('T')[0];
+      const transDate = document.getElementById('transDate');
+      if (transDate) transDate.value = today;
+      
+      const transferDate = document.getElementById('transferDate');
+      if (transferDate) transferDate.value = today;
+      
+      const recurEndDate = document.getElementById('recurEndDate');
+      if (recurEndDate) recurEndDate.min = today;
+    }
+
+    function setupEventListeners() {
+      // Transazioni
+      const addTransactionBtn = document.getElementById('addTransactionBtn');
+      if (addTransactionBtn) addTransactionBtn.addEventListener('click', addOrUpdateTransaction);
+      
+      const cancelEditBtn = document.getElementById('cancelEditBtn');
+      if (cancelEditBtn) cancelEditBtn.addEventListener('click', resetTransactionForm);
+      
+      // Spese rateizzate
+      const installmentCheckbox = document.getElementById('transInstallment');
+      if (installmentCheckbox) {
+        installmentCheckbox.addEventListener('change', toggleInstallmentControls);
+      }
+      
+      const amountInput = document.getElementById('transAmount');
+      const monthsInput = document.getElementById('transInstallmentMonths');
+      if (amountInput) amountInput.addEventListener('input', updateInstallmentPreview);
+      if (monthsInput) monthsInput.addEventListener('input', updateInstallmentPreview);
+      
+      // Spese fisse
+      const addRecurringBtn = document.getElementById('addRecurringBtn');
+      if (addRecurringBtn) addRecurringBtn.addEventListener('click', addRecurring);
+      
+      // Pulsante forza registrazione spese fisse
+      const forceRecurringBtn = document.getElementById('forceRecurringBtn');
+      if (forceRecurringBtn) forceRecurringBtn.addEventListener('click', forceProcessRecurring);
+      
+      // Calcolo costo residuo spese fisse
+      const recurAmountInput = document.getElementById('recurAmount');
+      const recurEndDateInput = document.getElementById('recurEndDate');
+      if (recurAmountInput) recurAmountInput.addEventListener('input', updateRemainingCostPreview);
+      if (recurEndDateInput) recurEndDateInput.addEventListener('change', updateRemainingCostPreview);
+      
+      // Risparmi
+      const addSavingBtn = document.getElementById('addSavingBtn');
+      if (addSavingBtn) addSavingBtn.addEventListener('click', addSaving);
+      
+      // Categorie
+      const addCategoryBtn = document.getElementById('addCategoryBtn');
+      if (addCategoryBtn) addCategoryBtn.addEventListener('click', addCategory);
+      
+      // Conti
+      const addAccountBtn = document.getElementById('addAccountBtn');
+      if (addAccountBtn) addAccountBtn.addEventListener('click', addAccount);
+      
+      // Trasferimenti
+      const addTransferBtn = document.getElementById('addTransferBtn');
+      if (addTransferBtn) addTransferBtn.addEventListener('click', addOrUpdateTransfer);
+      
+      const cancelTransferEditBtn = document.getElementById('cancelTransferEditBtn');
+      if (cancelTransferEditBtn) cancelTransferEditBtn.addEventListener('click', resetTransferForm);
+      
+      // Utenti
+      const addUserBtn = document.getElementById('addUserBtn');
+      if (addUserBtn) addUserBtn.addEventListener('click', createNewUser);
+      
+      const userSelect = document.getElementById('userSelect');
+      if (userSelect) userSelect.addEventListener('change', switchUser);
+      
+      // Cambia PIN
+      const changePinBtn = document.getElementById('changePinBtn');
+      if (changePinBtn) changePinBtn.addEventListener('click', showChangePin);
+      
+      // Filtri
+      const searchDescription = document.getElementById('searchDescription');
+      if (searchDescription) searchDescription.addEventListener('input', updateTransactionsTable);
+      
+      const filterCategory = document.getElementById('filterCategory');
+      if (filterCategory) filterCategory.addEventListener('change', updateTransactionsTable);
+      
+      const filterAccount = document.getElementById('filterAccount');
+      if (filterAccount) filterAccount.addEventListener('change', updateTransactionsTable);
+      
+      const filterType = document.getElementById('filterType');
+      if (filterType) filterType.addEventListener('change', updateTransactionsTable);
+      
+      const filterInstallment = document.getElementById('filterInstallment');
+      if (filterInstallment) filterInstallment.addEventListener('change', updateTransactionsTable);
+      
+      // Export/Import
+      const exportCSVBtn = document.getElementById('exportCSVBtn');
+      if (exportCSVBtn) exportCSVBtn.addEventListener('click', exportCSV);
+      
+      const exportAnnualBtn = document.getElementById('exportAnnualBtn');
+      if (exportAnnualBtn) exportAnnualBtn.addEventListener('click', exportAnnualCSV);
+      
+      const exportUserDataBtn = document.getElementById('exportUserDataBtn');
+      if (exportUserDataBtn) exportUserDataBtn.addEventListener('click', exportUserData);
+      
+      const importUserDataBtn = document.getElementById('importUserDataBtn');
+      if (importUserDataBtn) importUserDataBtn.addEventListener('click', () => {
+        document.getElementById('importUserData').click();
+      });
+      
+      const importUserData = document.getElementById('importUserData');
+      if (importUserData) importUserData.addEventListener('change', importUserDataFile);
+      
+      // Vista annuale
+      const yearSelect = document.getElementById('yearSelect');
+      if (yearSelect) yearSelect.addEventListener('change', updateAnnualView);
+    }
+
+    // ==========================================
+    // GESTIONE TEMA
+    // ==========================================
+    function initializeTheme() {
+      const themeToggle = document.getElementById('themeToggle');
+      if (!themeToggle) return;
+      
+      const savedTheme = localStorage.getItem('lumo_theme') || 'light';
+      
+      if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        themeToggle.textContent = '☀️';
+        themeToggle.style.background = 'rgba(255, 255, 255, 0.2)';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        themeToggle.textContent = '🌙';
+        themeToggle.style.background = 'rgba(255, 255, 255, 0.15)';
+      }
+      
+      themeToggle.addEventListener('click', function() {
+        const current = document.documentElement.getAttribute('data-theme');
+        const newTheme = current === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        themeToggle.style.background = newTheme === 'dark' 
+          ? 'rgba(255, 255, 255, 0.2)' 
+          : 'rgba(255, 255, 255, 0.15)';
+        
+        localStorage.setItem('lumo_theme', newTheme);
+        
+        // Aggiorna i grafici con il nuovo tema
+        updateDashboard();
+      });
+    }
+
+    // ==========================================
+    // GESTIONE UTENTI
+    // ==========================================
+    function loadUsers() {
+      const savedUsers = localStorage.getItem('lumo_users');
+      if (savedUsers) {
+        try {
+          users = JSON.parse(savedUsers);
+          // Migrazione: aggiungi campi mancanti per compatibilità
+          migrateUserData();
+        } catch(e) {
+          console.error('Errore nel parsing dei dati utente:', e);
+          createDefaultUser();
+        }
+      } else {
+        createDefaultUser();
+      }
+      
+      updateUserSelector();
+      loadUserData();
+    }
+
+    function migrateUserData() {
+      for (let userId in users) {
+        const user = users[userId];
+        
+        // Assicurati che tutti i campi esistano
+        if (!user.transactions) user.transactions = [];
+        if (!user.recurring) user.recurring = [];
+        if (!user.categories) user.categories = ['Alimentari', 'Trasporti', 'Abitazione', 'Svago', 'Salute', 'Altro'];
+        if (!user.accounts) user.accounts = ['Revolut', 'Intesa'];
+        if (!user.accountNames) user.accountNames = { 'Revolut': 'Revolut', 'Intesa': 'Intesa' };
+        if (!user.savings) user.savings = [];
+        if (!user.budgets) user.budgets = {};
+        if (!user.transfers) user.transfers = []; // Nuovo campo per trasferimenti
+        
+        // Migra transazioni: aggiungi campi per rateizzazioni
+        user.transactions.forEach(trans => {
+          if (trans.installment === undefined) {
+            trans.installment = false;
+            trans.installmentMonths = 0;
+            trans.monthlyInstallment = 0;
+          }
+          // Assicurati che il tipo sia valido
+          if (!['income', 'expense', 'transfer'].includes(trans.type)) {
+            trans.type = 'expense'; // Default
+          }
+        });
+        
+        // Migra spese fisse: aggiungi campo scadenza
+        user.recurring.forEach(rec => {
+          if (rec.endDate === undefined) {
+            rec.endDate = null;
+          }
+        });
+        
+        // Se ci sono vecchi trasferimenti nelle transazioni, spostali nell'array separato
+        const transferTransactions = user.transactions.filter(t => t.type === 'transfer');
+        if (transferTransactions.length > 0 && (!user.transfers || user.transfers.length === 0)) {
+          user.transfers = transferTransactions.map(t => ({
+            id: t.id,
+            date: t.date,
+            amount: t.amount,
+            fromAccount: t.fromAccount || t.account,
+            toAccount: t.toAccount || '',
+            description: t.description || '',
+            type: 'transfer'
+          }));
+          // Rimuovi i trasferimenti dalle transazioni normali
+          user.transactions = user.transactions.filter(t => t.type !== 'transfer');
+        }
+      }
+    }
+
+    function createDefaultUser() {
+      users = {
+        default: {
+          name: 'Profilo Predefinito',
+          transactions: [],
+          transfers: [], // Nuovo array per trasferimenti
+          recurring: [],
+          categories: ['Alimentari', 'Trasporti', 'Abitazione', 'Svago', 'Salute', 'Altro'],
+          accounts: ['Revolut', 'Intesa'],
+          accountNames: { 'Revolut': 'Revolut', 'Intesa': 'Intesa' },
+          savings: [],
+          budgets: {}
+        }
+      };
+      saveUsers();
+    }
+
+    function saveUsers() {
+      localStorage.setItem('lumo_users', JSON.stringify(users));
+    }
+
+    function loadUserData() {
+      const user = users[currentUser];
+      if (!user) {
+        console.error('Utente non trovato:', currentUser);
+        return;
+      }
+      
+      // Inizializza strutture mancanti
+      if (!user.transactions) user.transactions = [];
+      if (!user.transfers) user.transfers = [];
+      if (!user.recurring) user.recurring = [];
+      if (!user.categories) user.categories = ['Alimentari', 'Trasporti', 'Abitazione', 'Svago', 'Salute', 'Altro'];
+      if (!user.accounts) user.accounts = ['Revolut', 'Intesa'];
+      if (!user.accountNames) user.accountNames = { 'Revolut': 'Revolut', 'Intesa': 'Intesa' };
+      if (!user.savings) user.savings = [];
+      if (!user.budgets) user.budgets = {};
+      
+      // PROCESSO SPESE FISSE AUTOMATICAMENTE
+      processRecurringTransactions();
+      
+      updateCategorySelectors();
+      updateAccountSelectors();
+      updateTransferAccountSelectors();
+      updateTransactionsTable();
+      updateTransfersTable();
+      updateRecurringTable();
+      updateSavingsTable();
+      updateCategoriesTable();
+      updateAccountsTable();
+      updateDashboard();
+    }
+
+    function switchUser() {
+      const select = document.getElementById('userSelect');
+      if (!select) return;
+      
+      currentUser = select.value;
+      editingTransactionId = null;
+      editingRecurringId = null;
+      editingSavingId = null;
+      editingCategoryName = null;
+      editingAccountId = null;
+      editingTransferId = null;
+      
+      resetTransactionForm();
+      resetTransferForm();
+      resetRecurringForm();
+      loadUserData();
+    }
+
+    function updateUserSelector() {
+      const select = document.getElementById('userSelect');
+      if (!select) return;
+      
+      select.innerHTML = '';
+      
+      for (let userId in users) {
+        const option = document.createElement('option');
+        option.value = userId;
+        option.textContent = users[userId].name;
+        if (userId === currentUser) option.selected = true;
+        select.appendChild(option);
+      }
+    }
+
+    function createNewUser() {
+      const name = prompt('Nome del nuovo profilo:');
+      if (!name || name.trim() === '') return;
+      
+      const userId = 'user_' + Date.now();
+      
+      users[userId] = {
+        name: name.trim(),
+        transactions: [],
+        transfers: [],
+        recurring: [],
+        categories: ['Alimentari', 'Trasporti', 'Abitazione', 'Svago', 'Salute', 'Altro'],
+        accounts: ['Revolut', 'Intesa'],
+        accountNames: { 'Revolut': 'Revolut', 'Intesa': 'Intesa' },
+        savings: [],
+        budgets: {}
+      };
+      
+      saveUsers();
+      updateUserSelector();
+      
+      // Seleziona il nuovo utente
+      currentUser = userId;
+      const select = document.getElementById('userSelect');
+      if (select) select.value = userId;
+      
+      loadUserData();
+      resetTransactionForm();
+      resetTransferForm();
+      
+      // Mostra notifica animata
+      showNotification('Profilo creato con successo!', 'success');
+    }
+
+    // ==========================================
+    // GESTIONE CATEGORIE
+    // ==========================================
+    function updateCategorySelectors() {
+      const user = users[currentUser];
+      if (!user || !user.categories) return;
+      
+      const selectors = [
+        { id: 'transCategory', addAll: false },
+        { id: 'recurCategory', addAll: false },
+        { id: 'filterCategory', addAll: true }
+      ];
+      
+      selectors.forEach(selector => {
+        const element = document.getElementById(selector.id);
+        if (!element) return;
+        
+        const currentValue = element.value;
+        element.innerHTML = selector.addAll ? '<option value="">Tutte</option>' : '';
+        
+        user.categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat;
+          option.textContent = cat;
+          element.appendChild(option);
+        });
+        
+        if (currentValue && user.categories.includes(currentValue)) {
+          element.value = currentValue;
+        }
+      });
+    }
+
+    function addCategory() {
+      const user = users[currentUser];
+      const nameInput = document.getElementById('newCategory');
+      const budgetInput = document.getElementById('categoryBudget');
+      
+      if (!nameInput) return;
+      
+      const name = nameInput.value.trim();
+      if (!name) {
+        showNotification('Inserisci un nome per la categoria!', 'error');
+        return;
+      }
+      
+      if (user.categories.includes(name)) {
+        showNotification('Questa categoria esiste già!', 'warning');
+        return;
+      }
+      
+      // Aggiungi categoria
+      user.categories.push(name);
+      
+      // Aggiungi budget se specificato
+      if (budgetInput && budgetInput.value) {
+        const budget = parseFloat(budgetInput.value.replace(',', '.'));
+        if (!isNaN(budget) && budget > 0) {
+          user.budgets[name] = budget;
+        }
+      }
+      
+      // Salva e aggiorna
+      saveUsers();
+      updateCategorySelectors();
+      updateCategoriesTable();
+      updateDashboard();
+      
+      // Reset form
+      nameInput.value = '';
+      if (budgetInput) budgetInput.value = '';
+      
+      showNotification('Categoria aggiunta con successo!', 'success');
+    }
+
+    function updateCategoriesTable() {
+      const user = users[currentUser];
+      const tbody = document.getElementById('categoriesTable');
+      if (!tbody) return;
+      
+      tbody.innerHTML = '';
+      
+      if (user.categories.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="3" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              <div class="empty-state">
+                <div class="empty-state-icon">🏷️</div>
+                <p>Nessuna categoria creata</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      user.categories.forEach(category => {
+        const tr = document.createElement('tr');
+        const budget = user.budgets[category] || 0;
+        
+        tr.innerHTML = `
+          <td>
+            <button class="btn btn-small" onclick="editCategory('${category}')" title="Modifica">✏️</button>
+            <button class="btn btn-small btn-danger" onclick="deleteCategory('${category}')" title="Elimina">🗑️</button>
+          </td>
+          <td><span class="badge badge-category">${category}</span></td>
+          <td>${budget > 0 ? '€' + budget.toFixed(2) : '<span style="color: var(--text-secondary);">-</span>'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function editCategory(categoryName) {
+      const user = users[currentUser];
+      const currentBudget = user.budgets[categoryName] || 0;
+      
+      const newBudget = prompt(`Modifica budget per "${categoryName}":`, currentBudget > 0 ? currentBudget.toFixed(2) : '');
+      if (newBudget === null) return;
+      
+      const budgetValue = parseFloat(newBudget.replace(',', '.'));
+      if (isNaN(budgetValue)) {
+        delete user.budgets[categoryName];
+      } else if (budgetValue > 0) {
+        user.budgets[categoryName] = budgetValue;
+      } else {
+        delete user.budgets[categoryName];
+      }
+      
+      saveUsers();
+      updateCategoriesTable();
+      updateDashboard();
+    }
+
+    function deleteCategory(categoryName) {
+      if (!confirm(`Vuoi eliminare la categoria "${categoryName}"?\nLe transazioni esistenti verranno mantenute.`)) return;
+      
+      const user = users[currentUser];
+      
+      // Rimuovi categoria
+      user.categories = user.categories.filter(cat => cat !== categoryName);
+      
+      // Rimuovi budget associato
+      delete user.budgets[categoryName];
+      
+      saveUsers();
+      updateCategorySelectors();
+      updateCategoriesTable();
+      updateDashboard();
+    }
+
+    // ==========================================
+    // GESTIONE CONTI
+    // ==========================================
+    function updateAccountSelectors() {
+      const user = users[currentUser];
+      if (!user || !user.accounts) return;
+      
+      const selectors = [
+        { id: 'transAccount', addAll: false },
+        { id: 'recurAccount', addAll: false },
+        { id: 'filterAccount', addAll: true }
+      ];
+      
+      selectors.forEach(selector => {
+        const element = document.getElementById(selector.id);
+        if (!element) return;
+        
+        const currentValue = element.value;
+        element.innerHTML = selector.addAll ? '<option value="">Tutti</option>' : '';
+        
+        user.accounts.forEach(acc => {
+          const option = document.createElement('option');
+          option.value = acc;
+          option.textContent = user.accountNames[acc] || acc;
+          element.appendChild(option);
+        });
+        
+        if (currentValue && user.accounts.includes(currentValue)) {
+          element.value = currentValue;
+        }
+      });
+    }
+    
+    function updateTransferAccountSelectors() {
+      const user = users[currentUser];
+      if (!user || !user.accounts) return;
+      
+      const selectors = [
+        { id: 'transferFromAccount', addAll: false },
+        { id: 'transferToAccount', addAll: false }
+      ];
+      
+      selectors.forEach(selector => {
+        const element = document.getElementById(selector.id);
+        if (!element) return;
+        
+        const currentValue = element.value;
+        element.innerHTML = '<option value="">Seleziona conto</option>';
+        
+        user.accounts.forEach(acc => {
+          const option = document.createElement('option');
+          option.value = acc;
+          option.textContent = user.accountNames[acc] || acc;
+          element.appendChild(option);
+        });
+        
+        if (currentValue && user.accounts.includes(currentValue)) {
+          element.value = currentValue;
+        }
+      });
+    }
+
+    function addAccount() {
+      const user = users[currentUser];
+      const nameInput = document.getElementById('newAccountName');
+      
+      if (!nameInput) return;
+      
+      const name = nameInput.value.trim();
+      if (!name) {
+        showNotification('Inserisci un nome per il conto!', 'error');
+        return;
+      }
+      
+      // Crea ID univoco
+      const accountId = 'acc_' + Date.now();
+      
+      // Aggiungi conto
+      user.accounts.push(accountId);
+      user.accountNames[accountId] = name;
+      
+      // Salva e aggiorna
+      saveUsers();
+      updateAccountSelectors();
+      updateTransferAccountSelectors();
+      updateAccountsTable();
+      updateDashboard();
+      
+      // Reset form
+      nameInput.value = '';
+      
+      showNotification('Conto aggiunto con successo!', 'success');
+    }
+
+    function updateAccountsTable() {
+      const user = users[currentUser];
+      const tbody = document.getElementById('accountsTable');
+      if (!tbody) return;
+      
+      tbody.innerHTML = '';
+      
+      if (user.accounts.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              <div class="empty-state">
+                <div class="empty-state-icon">💰</div>
+                <p>Nessun conto creato</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      user.accounts.forEach(accountId => {
+        const balance = calculateAccountBalance(accountId);
+        const displayName = user.accountNames[accountId] || accountId;
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><code>${accountId}</code></td>
+          <td>
+            <input type="text" value="${displayName}" 
+                   onchange="renameAccount('${accountId}', this.value)" 
+                   class="form-control" style="padding: 8px; font-size: 14px;">
+          </td>
+          <td style="font-weight: bold; color: ${balance >= 0 ? '#10B981' : '#EF4444'}">
+            €${balance.toFixed(2)}
+          </td>
+          <td>
+            <button class="btn btn-small btn-danger" onclick="deleteAccount('${accountId}')" title="Elimina">🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renameAccount(accountId, newName) {
+      const user = users[currentUser];
+      const trimmedName = newName.trim();
+      
+      if (!trimmedName) {
+        showNotification('Il nome non può essere vuoto!', 'error');
+        return;
+      }
+      
+      user.accountNames[accountId] = trimmedName;
+      saveUsers();
+      updateAccountSelectors();
+      updateTransferAccountSelectors();
+      updateDashboard();
+    }
+
+    function deleteAccount(accountId) {
+      const user = users[currentUser];
+      
+      // Controlla se ci sono transazioni associate
+      const hasTransactions = user.transactions.some(t => t.account === accountId);
+      const hasTransfersFrom = user.transfers.some(t => t.fromAccount === accountId);
+      const hasTransfersTo = user.transfers.some(t => t.toAccount === accountId);
+      
+      if (hasTransactions || hasTransfersFrom || hasTransfersTo) {
+        if (!confirm(`Il conto ha transazioni/trasferimenti associati. Vuoi comunque eliminarlo?\nLe transazioni verranno mantenute ma senza conto assegnato.`)) return;
+      }
+      
+      // Rimuovi conto
+      user.accounts = user.accounts.filter(acc => acc !== accountId);
+      delete user.accountNames[accountId];
+      
+      // Aggiorna transazioni che usavano questo conto
+      user.transactions.forEach(trans => {
+        if (trans.account === accountId) {
+          trans.account = '';
+        }
+      });
+      
+      // Aggiorna trasferimenti che usavano questo conto
+      user.transfers.forEach(transfer => {
+        if (transfer.fromAccount === accountId) {
+          transfer.fromAccount = '';
+        }
+        if (transfer.toAccount === accountId) {
+          transfer.toAccount = '';
+        }
+      });
+      
+      saveUsers();
+      updateAccountSelectors();
+      updateTransferAccountSelectors();
+      updateAccountsTable();
+      updateDashboard();
+      
+      showNotification('Conto eliminato!', 'success');
+    }
+
+    // ==========================================
+    // TRANSAZIONI (con rateizzazione)
+    // ==========================================
+    function addOrUpdateTransaction() {
+      const user = users[currentUser];
+      
+      // Ottieni valori dal form
+      const type = document.getElementById('transType').value;
+      const date = document.getElementById('transDate').value;
+      const amountStr = document.getElementById('transAmount').value.trim().replace(',', '.');
+      const category = document.getElementById('transCategory').value;
+      const account = document.getElementById('transAccount').value;
+      const description = document.getElementById('transDescription').value.trim();
+      const isInstallment = document.getElementById('transInstallment').checked;
+      const installmentMonths = isInstallment ? 
+        parseInt(document.getElementById('transInstallmentMonths').value) || 1 : 0;
+      
+      // Validazione
+      if (!date) {
+        showNotification('Inserisci una data!', 'error');
+        return;
+      }
+      
+      const amount = parseFloat(amountStr);
+      if (isNaN(amount) || amount <= 0) {
+        showNotification('Inserisci un importo valido (maggiore di 0)!', 'error');
+        return;
+      }
+      
+      if (!category) {
+        showNotification('Seleziona una categoria!', 'error');
+        return;
+      }
+      
+      if (!account) {
+        showNotification('Seleziona un conto!', 'error');
+        return;
+      }
+      
+      if (isInstallment && installmentMonths < 2) {
+        showNotification('Il numero di mesi per una rateizzazione deve essere almeno 2!', 'error');
+        return;
+      }
+      
+      const monthlyInstallment = isInstallment ? amount / installmentMonths : 0;
+      
+      if (editingTransactionId) {
+        // MODIFICA TRANSAZIONE
+        const index = user.transactions.findIndex(t => t.id === editingTransactionId);
+        if (index !== -1) {
+          user.transactions[index] = {
+            id: editingTransactionId,
+            type,
+            date,
+            amount,
+            category,
+            account,
+            description: description || '',
+            installment: isInstallment,
+            installmentMonths: isInstallment ? installmentMonths : 0,
+            monthlyInstallment: monthlyInstallment,
+            recurringId: user.transactions[index].recurringId
+          };
+          saveUsers();
+          resetTransactionForm();
+          updateTransactionsTable();
+          updateDashboard();
+          showNotification('Transazione modificata!', 'success');
+        }
+      } else {
+        // NUOVA TRANSAZIONE
+        const transaction = {
+          id: Date.now(),
+          type,
+          date,
+          amount,
+          category,
+          account,
+          description: description || '',
+          installment: isInstallment,
+          installmentMonths: isInstallment ? installmentMonths : 0,
+          monthlyInstallment: monthlyInstallment
+        };
+        
+        user.transactions.push(transaction);
+        saveUsers();
+        resetTransactionForm();
+        updateTransactionsTable();
+        updateDashboard();
+        showNotification('Transazione aggiunta!', 'success');
+      }
+    }
+
+    function editTransaction(id) {
+      const user = users[currentUser];
+      const transaction = user.transactions.find(t => t.id === id);
+      
+      if (!transaction) return;
+      
+      // Popola il form
+      document.getElementById('transType').value = transaction.type;
+      document.getElementById('transDate').value = transaction.date;
+      document.getElementById('transAmount').value = transaction.amount.toFixed(2).replace('.', ',');
+      document.getElementById('transCategory').value = transaction.category;
+      document.getElementById('transAccount').value = transaction.account;
+      document.getElementById('transDescription').value = transaction.description || '';
+      document.getElementById('transInstallment').checked = transaction.installment || false;
+      
+      if (transaction.installmentMonths) {
+        document.getElementById('transInstallmentMonths').value = transaction.installmentMonths;
+      }
+      
+      // Aggiorna controlli rateizzazione
+      toggleInstallmentControls();
+      updateInstallmentPreview();
+      
+      // Cambia pulsante
+      const addBtn = document.getElementById('addTransactionBtn');
+      addBtn.textContent = 'Salva Modifica';
+      addBtn.className = 'btn btn-success';
+      
+      // Mostra pulsante annulla
+      const cancelBtn = document.getElementById('cancelEditBtn');
+      if (cancelBtn) cancelBtn.style.display = 'inline-block';
+      
+      editingTransactionId = id;
+      
+      // Scorri al form
+      document.getElementById('transactions').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function resetTransactionForm() {
+      document.getElementById('transType').value = 'expense';
+      document.getElementById('transDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('transAmount').value = '';
+      document.getElementById('transCategory').value = '';
+      document.getElementById('transAccount').value = '';
+      document.getElementById('transDescription').value = '';
+      document.getElementById('transInstallment').checked = false;
+      document.getElementById('transInstallmentMonths').value = '3';
+      
+      const addBtn = document.getElementById('addTransactionBtn');
+      if (addBtn) {
+        addBtn.textContent = 'Aggiungi Transazione';
+        addBtn.className = 'btn';
+      }
+      
+      const cancelBtn = document.getElementById('cancelEditBtn');
+      if (cancelBtn) cancelBtn.style.display = 'none';
+      
+      toggleInstallmentControls();
+      updateInstallmentPreview();
+      
+      editingTransactionId = null;
+    }
+
+    function deleteTransaction(id) {
+      if (!confirm('Vuoi eliminare questa transazione?')) return;
+      
+      const user = users[currentUser];
+      user.transactions = user.transactions.filter(t => t.id !== id);
+      saveUsers();
+      
+      if (editingTransactionId === id) resetTransactionForm();
+      
+      updateTransactionsTable();
+      updateDashboard();
+    }
+
+    function updateTransactionsTable() {
+      const user = users[currentUser];
+      const tbody = document.getElementById('transactionsTable');
+      if (!tbody) return;
+      
+      // Ottieni filtri
+      const searchDesc = document.getElementById('searchDescription').value.toLowerCase();
+      const filterCat = document.getElementById('filterCategory').value;
+      const filterAcc = document.getElementById('filterAccount').value;
+      const filterType = document.getElementById('filterType').value;
+      const filterInstallment = document.getElementById('filterInstallment').value;
+      
+      // Filtra transazioni
+      let filtered = user.transactions.filter(trans => {
+        if (searchDesc && !trans.description.toLowerCase().includes(searchDesc)) return false;
+        if (filterCat && trans.category !== filterCat) return false;
+        if (filterAcc && trans.account !== filterAcc) return false;
+        if (filterType && trans.type !== filterType) return false;
+        if (filterInstallment === 'yes' && !trans.installment) return false;
+        if (filterInstallment === 'no' && trans.installment) return false;
+        return true;
+      });
+      
+      // Ordina per data (più recente prima)
+      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      // Genera tabella
+      tbody.innerHTML = '';
+      
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              <div class="empty-state">
+                <div class="empty-state-icon">💳</div>
+                <p>Nessuna transazione trovata</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      filtered.forEach(trans => {
+        const tr = document.createElement('tr');
+        const displayName = user.accountNames[trans.account] || trans.account;
+        const isRecurring = trans.recurringId ? ' 🔄' : '';
+        const typeBadge = trans.type === 'income' ? 
+          '<span class="badge badge-income">Entrata</span>' : 
+          '<span class="badge badge-expense">Spesa</span>';
+        
+        // Info rateizzazione
+        let installmentInfo = '-';
+        if (trans.installment && trans.installmentMonths > 0) {
+          installmentInfo = `
+            <div style="font-size: 12px;">
+              <span class="installment-tag">${trans.installmentMonths} mesi</span>
+              <div style="margin-top: 4px; color: var(--text-secondary);">
+                €${trans.monthlyInstallment ? trans.monthlyInstallment.toFixed(2) : (trans.amount / trans.installmentMonths).toFixed(2)}/mese
+              </div>
+            </div>
+          `;
+        }
+        
+        tr.innerHTML = `
+          <td style="white-space: nowrap;">
+            <button class="btn btn-small" onclick="editTransaction(${trans.id})" title="Modifica">✏️</button>
+            <button class="btn btn-small btn-danger" onclick="deleteTransaction(${trans.id})" title="Elimina">🗑️</button>
+          </td>
+          <td>${formatDate(trans.date)}</td>
+          <td>${trans.description || '-'}${isRecurring}</td>
+          <td>${typeBadge}</td>
+          <td><span class="badge badge-account">${displayName}</span></td>
+          <td style="color: ${trans.type === 'income' ? '#10B981' : '#EF4444'}; font-weight: 700;">
+            ${trans.type === 'income' ? '+' : '-'}€${trans.amount.toFixed(2)}
+          </td>
+          <td>${installmentInfo}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ==========================================
+    // TRASFERIMENTI
+    // ==========================================
+    function addOrUpdateTransfer() {
+      const user = users[currentUser];
+      
+      // Ottieni valori dal form
+      const date = document.getElementById('transferDate').value;
+      const amountStr = document.getElementById('transferAmount').value.trim().replace(',', '.');
+      const fromAccount = document.getElementById('transferFromAccount').value;
+      const toAccount = document.getElementById('transferToAccount').value;
+      const description = document.getElementById('transferDescription').value.trim();
+      
+      // Validazione
+      if (!date) {
+        showNotification('Inserisci una data!', 'error');
+        return;
+      }
+      
+      const amount = parseFloat(amountStr);
+      if (isNaN(amount) || amount <= 0) {
+        showNotification('Inserisci un importo valido (maggiore di 0)!', 'error');
+        return;
+      }
+      
+      if (!fromAccount) {
+        showNotification('Seleziona il conto di origine!', 'error');
+        return;
+      }
+      
+      if (!toAccount) {
+        showNotification('Seleziona il conto di destinazione!', 'error');
+        return;
+      }
+      
+      if (fromAccount === toAccount) {
+        showNotification('Il conto di origine e destinazione non possono essere lo stesso!', 'error');
+        return;
+      }
+      
+      if (editingTransferId) {
+        // MODIFICA TRASFERIMENTO
+        const index = user.transfers.findIndex(t => t.id === editingTransferId);
+        if (index !== -1) {
+          user.transfers[index] = {
+            id: editingTransferId,
+            date,
+            amount,
+            fromAccount,
+            toAccount,
+            description: description || '',
+            type: 'transfer'
+          };
+          saveUsers();
+          resetTransferForm();
+          updateTransfersTable();
+          updateDashboard();
+          showNotification('Trasferimento modificato!', 'success');
+        }
+      } else {
+        // NUOVO TRASFERIMENTO
+        const transfer = {
+          id: Date.now(),
+          date,
+          amount,
+          fromAccount,
+          toAccount,
+          description: description || '',
+          type: 'transfer'
+        };
+        
+        user.transfers.push(transfer);
+        saveUsers();
+        resetTransferForm();
+        updateTransfersTable();
+        updateDashboard();
+        showNotification('Trasferimento aggiunto!', 'success');
+      }
+    }
+
+    function editTransfer(id) {
+      const user = users[currentUser];
+      const transfer = user.transfers.find(t => t.id === id);
+      
+      if (!transfer) return;
+      
+      // Popola il form
+      document.getElementById('transferDate').value = transfer.date;
+      document.getElementById('transferAmount').value = transfer.amount.toFixed(2).replace('.', ',');
+      document.getElementById('transferFromAccount').value = transfer.fromAccount;
+      document.getElementById('transferToAccount').value = transfer.toAccount;
+      document.getElementById('transferDescription').value = transfer.description || '';
+      
+      // Cambia pulsante
+      const addBtn = document.getElementById('addTransferBtn');
+      addBtn.textContent = 'Salva Modifica';
+      addBtn.className = 'btn btn-success';
+      
+      // Mostra pulsante annulla
+      const cancelBtn = document.getElementById('cancelTransferEditBtn');
+      if (cancelBtn) cancelBtn.style.display = 'inline-block';
+      
+      editingTransferId = id;
+      
+      // Scorri al form
+      document.getElementById('transfers').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function resetTransferForm() {
+      document.getElementById('transferDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('transferAmount').value = '';
+      document.getElementById('transferFromAccount').value = '';
+      document.getElementById('transferToAccount').value = '';
+      document.getElementById('transferDescription').value = '';
+      
+      const addBtn = document.getElementById('addTransferBtn');
+      if (addBtn) {
+        addBtn.textContent = 'Aggiungi Trasferimento';
+        addBtn.className = 'btn btn-info';
+      }
+      
+      const cancelBtn = document.getElementById('cancelTransferEditBtn');
+      if (cancelBtn) cancelBtn.style.display = 'none';
+      
+      editingTransferId = null;
+    }
+
+    function deleteTransfer(id) {
+      if (!confirm('Vuoi eliminare questo trasferimento?')) return;
+      
+      const user = users[currentUser];
+      user.transfers = user.transfers.filter(t => t.id !== id);
+      saveUsers();
+      
+      if (editingTransferId === id) resetTransferForm();
+      
+      updateTransfersTable();
+      updateDashboard();
+    }
+
+    function updateTransfersTable() {
+      const user = users[currentUser];
+      const tbody = document.getElementById('transfersTable');
+      if (!tbody) return;
+      
+      tbody.innerHTML = '';
+      
+      if (user.transfers.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              <div class="empty-state">
+                <div class="empty-state-icon">🔄</div>
+                <p>Nessun trasferimento trovato</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      // Ordina per data (più recente prima)
+      const sortedTransfers = [...user.transfers].sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      sortedTransfers.forEach(transfer => {
+        const tr = document.createElement('tr');
+        const fromAccountName = user.accountNames[transfer.fromAccount] || transfer.fromAccount;
+        const toAccountName = user.accountNames[transfer.toAccount] || transfer.toAccount;
+        
+        tr.innerHTML = `
+          <td style="white-space: nowrap;">
+            <button class="btn btn-small" onclick="editTransfer(${transfer.id})" title="Modifica">✏️</button>
+            <button class="btn btn-small btn-danger" onclick="deleteTransfer(${transfer.id})" title="Elimina">🗑️</button>
+          </td>
+          <td>${formatDate(transfer.date)}</td>
+          <td>${transfer.description || '-'}</td>
+          <td><span class="badge badge-account">${fromAccountName}</span></td>
+          <td><span class="badge badge-account">${toAccountName}</span></td>
+          <td style="color: var(--accent-cyan); font-weight: 700;">
+            €${transfer.amount.toFixed(2)}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ==========================================
+    // SPESE FISSE (con scadenza)
+    // ==========================================
+    function addRecurring() {
+      const user = users[currentUser];
+      
+      // Ottieni valori
+      const type = document.getElementById('recurType').value;
+      const name = document.getElementById('recurName').value.trim();
+      const amountStr = document.getElementById('recurAmount').value.trim().replace(',', '.');
+      const day = parseInt(document.getElementById('recurDay').value);
+      const category = document.getElementById('recurCategory').value;
+      const account = document.getElementById('recurAccount').value;
+      const endDate = document.getElementById('recurEndDate').value || null;
+      
+      // Validazione
+      if (!name) {
+        showNotification('Inserisci un nome!', 'error');
+        return;
+      }
+      
+      const amount = parseFloat(amountStr);
+      if (isNaN(amount) || amount <= 0) {
+        showNotification('Inserisci un importo valido!', 'error');
+        return;
+      }
+      
+      if (!day || day < 1 || day > 31) {
+        showNotification('Inserisci un giorno valido (1-31)!', 'error');
+        return;
+      }
+      
+      if (!category) {
+        showNotification('Seleziona una categoria!', 'error');
+        return;
+      }
+      
+      if (!account) {
+        showNotification('Seleziona un conto!', 'error');
+        return;
+      }
+      
+      // Validazione scadenza
+      if (endDate) {
+        const end = new Date(endDate);
+        const today = new Date();
+        if (end < today) {
+          showNotification('La data di scadenza non può essere nel passato!', 'error');
+          return;
+        }
+      }
+      
+      const recurring = {
+        id: Date.now(),
+        type,
+        name,
+        amount,
+        day,
+        category,
+        account,
+        endDate,
+        active: true,
+        startDate: new Date().toISOString().split('T')[0]
+      };
+      
+      user.recurring.push(recurring);
+      saveUsers();
+      
+      // Controlla se questa spesa fissa va registrata immediatamente
+      const now = new Date();
+      const currentDay = now.getDate();
+      
+      if (day <= currentDay) {
+        // Crea transazione per il mese corrente
+        const transactionDate = new Date(now.getFullYear(), now.getMonth(), day);
+        
+        const transaction = {
+          id: Date.now() + 1,
+          type: type,
+          date: transactionDate.toISOString().split('T')[0],
+          amount: amount,
+          category: category,
+          account: account,
+          description: `${name} (spesa fissa)`,
+          recurringId: recurring.id
+        };
+        
+        user.transactions.push(transaction);
+        saveUsers();
+      }
+      
+      updateRecurringTable();
+      updateDashboard();
+      
+      // Reset form
+      resetRecurringForm();
+      
+      showNotification('Voce fissa aggiunta! Le transazioni verranno create automaticamente ogni mese.', 'success');
+    }
+
+    function resetRecurringForm() {
+      document.getElementById('recurName').value = '';
+      document.getElementById('recurAmount').value = '';
+      document.getElementById('recurDay').value = '';
+      document.getElementById('recurEndDate').value = '';
+      document.getElementById('remainingCostInfo').style.display = 'none';
+    }
+
+    function updateRecurringTable() {
+      const user = users[currentUser];
+      const tbody = document.getElementById('recurringTable');
+      if (!tbody) return;
+      
+      tbody.innerHTML = '';
+      
+      if (user.recurring.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              <div class="empty-state">
+                <div class="empty-state-icon">🔄</div>
+                <p>Nessuna spesa fissa configurata</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      user.recurring.forEach(rec => {
+        const displayName = user.accountNames[rec.account] || rec.account;
+        
+        // Conta quante volte è stata già registrata
+        const timesRecorded = user.transactions.filter(t => t.recurringId === rec.id).length;
+        
+        // Calcola costo residuo
+        const remainingCost = rec.endDate ? calculateRemainingCost(rec) : null;
+        const remainingMonths = rec.endDate ? calculateRemainingMonths(rec.endDate) : null;
+        
+        // Determina se è scaduta
+        const isExpired = rec.endDate ? new Date(rec.endDate) < new Date() : false;
+        const expiryStatus = isExpired ? 
+          '<span class="expired-badge">Scaduta</span>' : 
+          (rec.endDate ? formatDate(rec.endDate) : '-');
+        
+        // Calcola costo residuo da visualizzare
+        let remainingCostDisplay = '-';
+        if (remainingCost !== null) {
+          if (isExpired) {
+            remainingCostDisplay = '<span style="color: var(--text-secondary);">€0.00</span>';
+          } else if (remainingCost === 0) {
+            remainingCostDisplay = '<span style="color: var(--accent-green);">€0.00</span>';
+          } else {
+            remainingCostDisplay = `<span class="remaining-cost">€${remainingCost.toFixed(2)}</span>`;
+          }
+        }
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <button class="btn btn-small ${rec.active ? 'btn-success' : 'btn-danger'}" onclick="toggleRecurring(${rec.id})" title="${rec.active ? 'Disattiva' : 'Attiva'}">
+              ${rec.active ? '✓' : '✗'}
+            </button>
+            <button class="btn btn-small btn-danger" onclick="deleteRecurring(${rec.id})" title="Elimina">🗑️</button>
+          </td>
+          <td><strong>${rec.name}</strong></td>
+          <td>${rec.type === 'income' ? 
+            '<span class="badge badge-income">Entrata</span>' : 
+            '<span class="badge badge-expense">Spesa</span>'}</td>
+          <td style="color: ${rec.type === 'income' ? '#10B981' : '#EF4444'}; font-weight: 700;">
+            €${rec.amount.toFixed(2)}
+          </td>
+          <td><span class="badge badge-category">${rec.day}</span></td>
+          <td><span class="badge badge-category">${rec.category}</span></td>
+          <td><span class="badge badge-account">${displayName}</span></td>
+          <td>${expiryStatus}</td>
+          <td>${remainingCostDisplay}</td>
+          <td>
+            <span class="status-badge ${rec.active ? 'status-active' : 'status-inactive'}">
+              ${rec.active ? '✅ Attivo' : '❌ Disattivato'}
+            </span>
+            <br><small style="color: var(--text-secondary);">Registrata: ${timesRecorded} volte</small>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function toggleRecurring(id) {
+      const user = users[currentUser];
+      const recurring = user.recurring.find(r => r.id === id);
+      if (recurring) {
+        recurring.active = !recurring.active;
+        saveUsers();
+        updateRecurringTable();
+        
+        // Mostra messaggio informativo
+        if (recurring.active) {
+          showNotification(`Spesa fissa "${recurring.name}" attivata. Verrà registrata automaticamente ogni mese.`, 'success');
+        } else {
+          showNotification(`Spesa fissa "${recurring.name}" disattivata. Non verranno create nuove transazioni.`, 'warning');
+        }
+        
+        updateDashboard();
+      }
+    }
+
+    function deleteRecurring(id) {
+      if (!confirm('Vuoi eliminare questa voce fissa?\nLe transazioni già create non verranno eliminate.')) return;
+      
+      const user = users[currentUser];
+      user.recurring = user.recurring.filter(r => r.id !== id);
+      saveUsers();
+      updateRecurringTable();
+      updateDashboard();
+    }
+
+    // ==========================================
+    // FORZA REGISTRAZIONE SPESE FISSE
+    // ==========================================
+    function forceProcessRecurring() {
+      if (confirm('Vuoi forzare la registrazione di tutte le spese fisse per il mese corrente?\nVerranno create transazioni anche se il giorno non è ancora passato.')) {
+        const user = users[currentUser];
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        
+        let createdCount = 0;
+        
+        user.recurring.forEach(rec => {
+          if (rec.active) {
+            // Controlla se è scaduta
+            if (rec.endDate && new Date(rec.endDate) < now) {
+              return;
+            }
+            
+            // Controlla se già registrata
+            const alreadyProcessed = user.transactions.some(trans => {
+              const transDate = new Date(trans.date);
+              return trans.recurringId === rec.id && 
+                     transDate.getMonth() === currentMonth && 
+                     transDate.getFullYear() === currentYear;
+            });
+            
+            if (!alreadyProcessed) {
+              // Crea transazione
+              const transactionDate = new Date(currentYear, currentMonth, rec.day);
+              
+              const transaction = {
+                id: Date.now() + Math.random(),
+                type: rec.type,
+                date: transactionDate.toISOString().split('T')[0],
+                amount: rec.amount,
+                category: rec.category,
+                account: rec.account,
+                description: `${rec.name} (spesa fissa)`,
+                recurringId: rec.id
+              };
+              
+              user.transactions.push(transaction);
+              createdCount++;
+            }
+          }
+        });
+        
+        saveUsers();
+        updateTransactionsTable();
+        updateDashboard();
+        
+        showNotification(`${createdCount} transazioni fisse create con successo!`, 'success');
+      }
+    }
+
+    // ==========================================
+    // RISPARMI
+    // ==========================================
+    function addSaving() {
+      const user = users[currentUser];
+      
+      const name = document.getElementById('savingName').value.trim();
+      const amountStr = document.getElementById('savingAmount').value.trim().replace(',', '.');
+      const goalStr = document.getElementById('savingGoal').value.trim().replace(',', '.');
+      
+      if (!name) {
+        showNotification('Inserisci un nome per il conto risparmio!', 'error');
+        return;
+      }
+      
+      const amount = parseFloat(amountStr) || 0;
+      const goal = parseFloat(goalStr) || 0;
+      
+      if (amount < 0) {
+        showNotification('Il saldo iniziale non può essere negativo!', 'error');
+        return;
+      }
+      
+      if (goal < 0) {
+        showNotification('L\'obiettivo non può essere negativo!', 'error');
+        return;
+      }
+      
+      const saving = {
+        id: Date.now(),
+        name,
+        amount,
+        goal
+      };
+      
+      user.savings.push(saving);
+      saveUsers();
+      updateSavingsTable();
+      
+      // Reset form
+      document.getElementById('savingName').value = '';
+      document.getElementById('savingAmount').value = '';
+      document.getElementById('savingGoal').value = '';
+      
+      showNotification('Conto risparmio aggiunto!', 'success');
+    }
+
+    function updateSavingsTable() {
+      const user = users[currentUser];
+      const tbody = document.getElementById('savingsTable');
+      if (!tbody) return;
+      
+      tbody.innerHTML = '';
+      
+      if (user.savings.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              <div class="empty-state">
+                <div class="empty-state-icon">🏦</div>
+                <p>Nessun conto risparmio creato</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      user.savings.forEach(saving => {
+        const percentage = saving.goal > 0 ? Math.min((saving.amount / saving.goal) * 100, 100) : 0;
+        let progressColor = '#10B981';
+        if (percentage > 90) progressColor = '#EF4444';
+        else if (percentage > 70) progressColor = '#F59E0B';
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <button class="btn btn-small" onclick="editSaving(${saving.id})" title="Modifica">✏️</button>
+            <button class="btn btn-small btn-danger" onclick="deleteSaving(${saving.id})" title="Elimina">🗑️</button>
+          </td>
+          <td><strong>${saving.name}</strong></td>
+          <td style="font-weight: 700; color: #10B981;">€${saving.amount.toFixed(2)}</td>
+          <td>${saving.goal > 0 ? '<span style="font-weight: 600;">€' + saving.goal.toFixed(2) + '</span>' : 
+                '<span style="color: var(--text-secondary);">-</span>'}</td>
+          <td>
+            ${saving.goal > 0 ? `
+              <div class="progress-container">
+                <div class="progress-bar" style="width: ${percentage}%; background: ${progressColor};"></div>
+              </div>
+              <small style="color: var(--text-secondary);">${percentage.toFixed(1)}% raggiunto</small>
+            ` : '-'}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function editSaving(id) {
+      const user = users[currentUser];
+      const saving = user.savings.find(s => s.id === id);
+      
+      if (!saving) return;
+      
+      const newAmount = prompt(`Modifica saldo per "${saving.name}":`, saving.amount.toFixed(2));
+      if (newAmount === null) return;
+      
+      const amount = parseFloat(newAmount.replace(',', '.'));
+      if (isNaN(amount) || amount < 0) {
+        showNotification('Importo non valido!', 'error');
+        return;
+      }
+      
+      saving.amount = amount;
+      saveUsers();
+      updateSavingsTable();
+    }
+
+    function deleteSaving(id) {
+      if (!confirm('Vuoi eliminare questo conto risparmio?')) return;
+      
+      const user = users[currentUser];
+      user.savings = user.savings.filter(s => s.id !== id);
+      saveUsers();
+      updateSavingsTable();
+    }
+
+    // ==========================================
+    // CALCOLI E STATISTICHE - VERSIONE CORRETTA
+    // ==========================================
+    function calculateAccountBalance(accountId) {
+      const user = users[currentUser];
+      let balance = 0;
+      
+      // Considera le transazioni reali
+      user.transactions.forEach(trans => {
+        if (trans.account === accountId) {
+          if (trans.type === 'income') {
+            // Entrate: aggiungi sempre l'intero importo
+            balance += trans.amount;
+          } else if (trans.type === 'expense') {
+            // PER LE SPESE: gestisci rateizzazioni
+            if (trans.installment && trans.installmentMonths > 0) {
+              // Per spese rateizzate: calcola solo la parte già pagata
+              const transDate = new Date(trans.date);
+              const today = new Date();
+              
+              // Se la data della transazione è oggi o nel passato, scalare almeno una rata
+              if (transDate <= today) {
+                // Calcola il numero di mesi passati dalla transazione (considerando il mese corrente come passato)
+                const monthsPassed = (today.getFullYear() - transDate.getFullYear()) * 12 + 
+                                    (today.getMonth() - transDate.getMonth());
+                
+                // Se siamo nello stesso mese, monthsPassed = 0, ma dobbiamo contare 1 rata
+                // Se sono passati mesi, dobbiamo contare monthsPassed + 1 rate (perché contiamo anche il mese corrente)
+                const dueInstallments = Math.min(monthsPassed + 1, trans.installmentMonths);
+                
+                // Calcola l'importo già dovuto (e quindi da scalare dal saldo)
+                const monthlyInstallment = trans.monthlyInstallment || (trans.amount / trans.installmentMonths);
+                const dueAmount = dueInstallments * monthlyInstallment;
+                
+                balance -= dueAmount;
+              }
+              // Se la data della transazione è nel futuro, non scalare nulla
+            } else {
+              // Per spese non rateizzate, sottrai l'intero importo
+              balance -= trans.amount;
+            }
+          }
+        }
+      });
+      
+      // Considera i trasferimenti
+      user.transfers.forEach(transfer => {
+        if (transfer.fromAccount === accountId) {
+          balance -= transfer.amount;
+        }
+        if (transfer.toAccount === accountId) {
+          balance += transfer.amount;
+        }
+      });
+      
+      return balance;
+    }
+
+    function calculateMonthlyStats() {
+      const user = users[currentUser];
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      let income = 0;
+      let expenses = 0;
+      
+      // Conta SOLO le transazioni reali del mese corrente (non i trasferimenti)
+      user.transactions.forEach(trans => {
+        const date = new Date(trans.date);
+        const transMonth = date.getMonth();
+        const transYear = date.getFullYear();
+        
+        if (transYear === currentYear) {
+          if (trans.type === 'income') {
+            // Entrate: solo se la transazione è in questo mese
+            if (transMonth === currentMonth) {
+              income += trans.amount;
+            }
+          } else if (trans.type === 'expense') {
+            // PER LE SPESE RATEIZZATE: usa la rata mensile invece dell'importo totale
+            if (trans.installment && trans.installmentMonths > 0) {
+              // Calcola la rata mensile
+              const monthlyInstallment = trans.monthlyInstallment || (trans.amount / trans.installmentMonths);
+              
+              // Determina se questa transazione contribuisce al mese corrente
+              const monthsSinceTransaction = (currentYear - transYear) * 12 + (currentMonth - transMonth);
+              
+              // La transazione contribuisce solo se siamo entro il periodo di rateizzazione
+              if (monthsSinceTransaction >= 0 && monthsSinceTransaction < trans.installmentMonths) {
+                expenses += monthlyInstallment;
+              }
+            } else {
+              // Per spese non rateizzate, solo se la transazione è in questo mese
+              if (transMonth === currentMonth) {
+                expenses += trans.amount;
+              }
+            }
+          }
+        }
+      });
+      
+      return { 
+        income, 
+        expenses,
+        date: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+      };
+    }
+
+    function calculateTotalBalance() {
+      const user = users[currentUser];
+      let total = 0;
+      
+      // Saldi conti (da transazioni reali e trasferimenti)
+      user.accounts.forEach(acc => {
+        total += calculateAccountBalance(acc);
+      });
+      
+      // Saldi risparmi
+      user.savings.forEach(saving => {
+        total += saving.amount;
+      });
+      
+      return total;
+    }
+
+    // ==========================================
+    // NUOVA FUNZIONE PER CALCOLARE SPESE MENSILI CORRETTE
+    // ==========================================
+    function getCurrentMonthCategoryExpenses() {
+      const user = users[currentUser];
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      const categoryExpenses = {};
+      
+      user.transactions.forEach(trans => {
+        const date = new Date(trans.date);
+        const transMonth = date.getMonth();
+        const transYear = date.getFullYear();
+        
+        if (transYear === currentYear && trans.type === 'expense') {
+          // PER LE SPESE RATEIZZATE: usa la rata mensile invece dell'importo totale
+          if (trans.installment && trans.installmentMonths > 0) {
+            const monthlyInstallment = trans.monthlyInstallment || (trans.amount / trans.installmentMonths);
+            
+            // Determina se questa transazione contribuisce al mese corrente
+            const monthsSinceTransaction = (currentYear - transYear) * 12 + (currentMonth - transMonth);
+            
+            // La transazione contribuisce solo se siamo entro il periodo di rateizzazione
+            if (monthsSinceTransaction >= 0 && monthsSinceTransaction < trans.installmentMonths) {
+              categoryExpenses[trans.category] = (categoryExpenses[trans.category] || 0) + monthlyInstallment;
+            }
+          } else {
+            // Per spese non rateizzate, solo se la transazione è in questo mese
+            if (transMonth === currentMonth) {
+              categoryExpenses[trans.category] = (categoryExpenses[trans.category] || 0) + trans.amount;
+            }
+          }
+        }
+      });
+      
+      return categoryExpenses;
+    }
+
+    // ==========================================
+    // DASHBOARD (con colore dinamico per il saldo) - VERSIONE CORRETTA
+    // ==========================================
+    function updateDashboard() {
+      const user = users[currentUser];
+      
+      // Calcola totali
+      const totalBalance = calculateTotalBalance();
+      const monthlyStats = calculateMonthlyStats();
+      
+      // Aggiorna card principali
+      const totalBalanceElement = document.getElementById('totalBalance');
+      totalBalanceElement.textContent = `€${totalBalance.toFixed(2)}`;
+      
+      // Applica colore dinamico al saldo totale
+      totalBalanceElement.classList.remove('balance-positive', 'balance-negative');
+      if (totalBalance >= 0) {
+        totalBalanceElement.classList.add('balance-positive');
+      } else {
+        totalBalanceElement.classList.add('balance-negative');
+      }
+      
+      document.getElementById('monthlyIncome').textContent = `€${monthlyStats.income.toFixed(2)}`;
+      document.getElementById('monthlyExpenses').textContent = `€${monthlyStats.expenses.toFixed(2)}`;
+      
+      // Aggiorna card conti
+      updateAccountCards();
+      
+      // Aggiorna card budget
+      updateBudgetCards();
+      
+      // Aggiorna grafico spese
+      updateExpensesChart();
+    }
+
+    function updateAccountCards() {
+      const user = users[currentUser];
+      const container = document.getElementById('accountCards');
+      if (!container) return;
+      
+      container.innerHTML = '';
+      
+      if (user.accounts.length === 0) return;
+      
+      user.accounts.forEach(acc => {
+        const balance = calculateAccountBalance(acc);
+        const displayName = user.accountNames[acc] || acc;
+        
+        const card = document.createElement('div');
+        card.className = 'card purple card-hover-effect';
+        card.innerHTML = `
+          <h3>${displayName}</h3>
+          <div class="amount" style="color: ${balance >= 0 ? '#10B981' : '#EF4444'}">
+            €${balance.toFixed(2)}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateBudgetCards() {
+      const user = users[currentUser];
+      const container = document.getElementById('budgetCards');
+      if (!container) return;
+      
+      container.innerHTML = '';
+      
+      // Calcola spese per categoria del mese corrente (USANDO LA NUOVA FUNZIONE)
+      const categoryExpenses = getCurrentMonthCategoryExpenses();
+      const monthYear = calculateMonthlyStats().date;
+      
+      // Crea card per categorie con budget
+      for (let category in user.budgets) {
+        const budget = user.budgets[category];
+        const spent = categoryExpenses[category] || 0;
+        const percentage = budget > 0 ? (spent / budget) * 100 : 0;
+        
+        let progressColor = '#10B981';
+        if (percentage > 90) progressColor = '#EF4444';
+        else if (percentage > 70) progressColor = '#F59E0B';
+        
+        const card = document.createElement('div');
+        card.className = 'card orange card-hover-effect';
+        card.innerHTML = `
+          <h3>Budget ${category}</h3>
+          <div class="amount">€${spent.toFixed(2)} / €${budget.toFixed(2)}</div>
+          <div style="margin-top: 12px;">
+            <div class="progress-container">
+              <div class="progress-bar" style="width: ${Math.min(percentage, 100)}%; background: ${progressColor};"></div>
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+              ${percentage.toFixed(1)}% utilizzato
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    function updateExpensesChart() {
+      const user = users[currentUser];
+      const ctx = document.getElementById('expensesChart');
+      if (!ctx) return;
+      
+      // Calcola spese per categoria del mese corrente (USANDO LA NUOVA FUNZIONE)
+      const categoryExpenses = getCurrentMonthCategoryExpenses();
+      
+      const labels = Object.keys(categoryExpenses);
+      const data = Object.values(categoryExpenses);
+      
+      // Distruggi grafico esistente
+      if (window.expensesChartInstance) {
+        window.expensesChartInstance.destroy();
+      }
+      
+      if (labels.length === 0) {
+        ctx.parentElement.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <p>Nessuna spesa registrata questo mese</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Crea nuovo grafico
+      window.expensesChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: [
+              '#6366F1', '#8B5CF6', '#10B981', '#0EA5E9',
+              '#F59E0B', '#EF4444', '#A855F7', '#EC4899',
+              '#14B8A6', '#3B82F6', '#F97316', '#8B5CF6'
+            ],
+            borderWidth: 0,
+            hoverOffset: 10
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                padding: 15,
+                usePointStyle: true,
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary'),
+                font: {
+                  size: 11
+                }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const value = context.raw;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = Math.round((value / total) * 100);
+                  return `${context.label}: €${value.toFixed(2)} (${percentage}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // VISTA ANNUALE - VERSIONE CORRETTA
+    // ==========================================
+    function updateAnnualView() {
+      updateYearSelect();
+      updateAnnualStats();
+      updateMonthlyBreakdown();
+      updateAnnualCategoryChart();
+    }
+
+    function updateYearSelect() {
+      const user = users[currentUser];
+      const select = document.getElementById('yearSelect');
+      if (!select) return;
+      
+      // Trova tutti gli anni presenti nelle transazioni
+      const years = new Set();
+      
+      user.transactions.forEach(trans => {
+        const year = new Date(trans.date).getFullYear();
+        years.add(year);
+      });
+      
+      // Aggiungi anno corrente se non presente
+      const currentYear = new Date().getFullYear();
+      years.add(currentYear);
+      
+      // Converti in array e ordina
+      const yearsArray = Array.from(years).sort((a, b) => b - a);
+      
+      // Aggiorna select
+      select.innerHTML = '';
+      yearsArray.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        if (year === currentYear) option.selected = true;
+        select.appendChild(option);
+      });
+    }
+
+    function updateAnnualStats() {
+      const user = users[currentUser];
+      const yearSelect = document.getElementById('yearSelect');
+      const year = yearSelect ? parseInt(yearSelect.value) : new Date().getFullYear();
+      
+      let annualIncome = 0;
+      let annualExpenses = 0;
+      
+      user.transactions.forEach(trans => {
+        const transYear = new Date(trans.date).getFullYear();
+        if (transYear === year) {
+          if (trans.type === 'income') {
+            annualIncome += trans.amount;
+          } else if (trans.type === 'expense') {
+            // PER LE SPESE RATEIZZATE NELLA VISTA ANNUALE:
+            if (trans.installment && trans.installmentMonths > 0) {
+              const monthlyInstallment = trans.monthlyInstallment || (trans.amount / trans.installmentMonths);
+              const transDate = new Date(trans.date);
+              const transMonth = transDate.getMonth();
+              
+              // Per ogni mese dell'anno in cui la rateizzazione è attiva
+              for (let month = 0; month < 12; month++) {
+                // Calcola il numero di mesi dalla transazione
+                const monthsSinceTransaction = (year - transYear) * 12 + (month - transMonth);
+                
+                // Se siamo nel periodo di rateizzazione per questo mese
+                if (monthsSinceTransaction >= 0 && monthsSinceTransaction < trans.installmentMonths) {
+                  annualExpenses += monthlyInstallment;
+                }
+              }
+            } else {
+              // Per spese non rateizzate
+              annualExpenses += trans.amount;
+            }
+          }
+        }
+      });
+      
+      const annualBalance = annualIncome - annualExpenses;
+      const monthlyAverage = annualBalance / 12;
+      
+      document.getElementById('annualIncome').textContent = `€${annualIncome.toFixed(2)}`;
+      document.getElementById('annualExpenses').textContent = `€${annualExpenses.toFixed(2)}`;
+      document.getElementById('annualBalance').textContent = `€${annualBalance.toFixed(2)}`;
+      document.getElementById('monthlyAverage').textContent = `€${monthlyAverage.toFixed(2)}`;
+    }
+
+    function updateMonthlyBreakdown() {
+      const user = users[currentUser];
+      const yearSelect = document.getElementById('yearSelect');
+      const year = yearSelect ? parseInt(yearSelect.value) : new Date().getFullYear();
+      const container = document.getElementById('monthlyBreakdown');
+      
+      if (!container) return;
+      
+      container.innerHTML = '';
+      
+      const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                         'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+      
+      // Calcola per ogni mese
+      for (let month = 0; month < 12; month++) {
+        let monthlyIncome = 0;
+        let monthlyExpenses = 0;
+        
+        user.transactions.forEach(trans => {
+          const transDate = new Date(trans.date);
+          const transYear = transDate.getFullYear();
+          const transMonth = transDate.getMonth();
+          
+          if (transYear === year) {
+            if (trans.type === 'income') {
+              // Entrate: solo se la transazione è in questo mese di questo anno
+              if (transMonth === month) {
+                monthlyIncome += trans.amount;
+              }
+            } else if (trans.type === 'expense') {
+              // Spese: gestisci rateizzazioni
+              if (trans.installment && trans.installmentMonths > 0) {
+                const monthlyInstallment = trans.monthlyInstallment || (trans.amount / trans.installmentMonths);
+                
+                // Calcola il numero di mesi dalla transazione
+                const monthsSinceTransaction = (year - transYear) * 12 + (month - transMonth);
+                
+                // Se siamo nel periodo di rateizzazione per questo mese
+                if (monthsSinceTransaction >= 0 && monthsSinceTransaction < trans.installmentMonths) {
+                  monthlyExpenses += monthlyInstallment;
+                }
+              } else {
+                // Spese non rateizzate: solo se la transazione è in questo mese di questo anno
+                if (transMonth === month) {
+                  monthlyExpenses += trans.amount;
+                }
+              }
+            }
+          }
+        });
+        
+        const monthlyBalance = monthlyIncome - monthlyExpenses;
+        
+        const monthCard = document.createElement('div');
+        monthCard.className = 'card card-hover-effect';
+        monthCard.style.padding = '12px';
+        monthCard.innerHTML = `
+          <h4 style="color: var(--text-primary); margin-bottom: 8px; border-bottom: 2px solid var(--border-color); padding-bottom: 6px; font-size: 14px;">
+            ${monthNames[month]} ${year}
+          </h4>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+            <div style="color: #10B981; font-weight: 600;">€${monthlyIncome.toFixed(2)}</div>
+            <div style="color: #EF4444; font-weight: 600;">€${monthlyExpenses.toFixed(2)}</div>
+          </div>
+          <div style="font-weight: 700; color: ${monthlyBalance >= 0 ? '#10B981' : '#EF4444'}; text-align: center; font-size: 13px;">
+            Saldo: €${monthlyBalance.toFixed(2)}
+          </div>
+        `;
+        container.appendChild(monthCard);
+      }
+    }
+
+    function updateAnnualCategoryChart() {
+      const ctx = document.getElementById('annualCategoryChart');
+      if (!ctx) return;
+      
+      const user = users[currentUser];
+      const yearSelect = document.getElementById('yearSelect');
+      const year = yearSelect ? parseInt(yearSelect.value) : new Date().getFullYear();
+      
+      // Calcola spese per categoria per l'anno selezionato
+      const categoryExpenses = {};
+      
+      user.transactions.forEach(trans => {
+        const transDate = new Date(trans.date);
+        const transYear = transDate.getFullYear();
+        
+        if (transYear === year && trans.type === 'expense') {
+          if (trans.installment && trans.installmentMonths > 0) {
+            const monthlyInstallment = trans.monthlyInstallment || (trans.amount / trans.installmentMonths);
+            const transMonth = transDate.getMonth();
+            
+            // Per ogni mese dell'anno in cui la rateizzazione è attiva
+            for (let month = 0; month < 12; month++) {
+              // Calcola il numero di mesi dalla transazione
+              const monthsSinceTransaction = (year - transYear) * 12 + (month - transMonth);
+              
+              // Se siamo nel periodo di rateizzazione per questo mese
+              if (monthsSinceTransaction >= 0 && monthsSinceTransaction < trans.installmentMonths) {
+                categoryExpenses[trans.category] = (categoryExpenses[trans.category] || 0) + monthlyInstallment;
+              }
+            }
+          } else {
+            // Per spese non rateizzate
+            categoryExpenses[trans.category] = (categoryExpenses[trans.category] || 0) + trans.amount;
+          }
+        }
+      });
+      
+      const labels = Object.keys(categoryExpenses);
+      const data = Object.values(categoryExpenses);
+      
+      // Distruggi grafico esistente
+      if (window.annualCategoryChartInstance) {
+        window.annualCategoryChartInstance.destroy();
+      }
+      
+      if (labels.length === 0) {
+        ctx.parentElement.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <p>Nessuna spesa registrata per l'anno ${year}</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Crea nuovo grafico
+      window.annualCategoryChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Spese Annuali',
+            data: data,
+            backgroundColor: '#6366F1',
+            borderColor: '#4F46E5',
+            borderWidth: 1,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.label}: €${context.raw.toFixed(2)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return '€' + value;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // FUNZIONI UTILITY
+    // ==========================================
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+
+    function showNotification(message, type = 'info') {
+      // Rimuovi notifiche precedenti
+      const existingNotification = document.querySelector('.notification');
+      if (existingNotification) {
+        existingNotification.remove();
+      }
+      
+      // Crea elemento notifica
+      const notification = document.createElement('div');
+      notification.className = `notification notification-${type}`;
+      notification.textContent = message;
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+        z-index: 9999;
+        animation: fadeInUp 0.3s ease;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      `;
+      
+      // Colori in base al tipo
+      if (type === 'success') {
+        notification.style.background = 'linear-gradient(135deg, #10B981 0%, #34D399 100%)';
+      } else if (type === 'error') {
+        notification.style.background = 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)';
+      } else if (type === 'warning') {
+        notification.style.background = 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)';
+      } else {
+        notification.style.background = 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)';
+      }
+      
+      document.body.appendChild(notification);
+      
+      // Rimuovi dopo 3 secondi
+      setTimeout(() => {
+        notification.style.animation = 'fadeInUp 0.3s ease reverse';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // ==========================================
+    // ESPORTAZIONE/IMPORTAZIONE
+    // ==========================================
+    function exportCSV() {
+      const user = users[currentUser];
+      let csv = 'Data,Tipo,Importo,Categoria,Conto,Descrizione,Rateizzata,MesiRate,RataMensile,ImportoTotale\n';
+      
+      user.transactions.forEach(trans => {
+        const type = trans.type === 'income' ? 'Entrata' : 'Spesa';
+        const desc = trans.description ? `"${trans.description.replace(/"/g, '""')}"` : '';
+        const accountName = user.accountNames[trans.account] || trans.account;
+        const installment = trans.installment ? 'SI' : 'NO';
+        const months = trans.installmentMonths || 0;
+        const monthly = trans.monthlyInstallment || 0;
+        const total = trans.amount || 0;
+        
+        csv += `${trans.date},${type},${trans.amount},${trans.category},${accountName},${desc},${installment},${months},${monthly},${total}\n`;
+      });
+      
+      // Aggiungi trasferimenti
+      csv += '\n\nTRASFERIMENTI\n';
+      csv += 'Data,Da Conto,A Conto,Importo,Descrizione\n';
+      
+      user.transfers.forEach(transfer => {
+        const fromAccountName = user.accountNames[transfer.fromAccount] || transfer.fromAccount;
+        const toAccountName = user.accountNames[transfer.toAccount] || transfer.toAccount;
+        const desc = transfer.description ? `"${transfer.description.replace(/"/g, '""')}"` : '';
+        
+        csv += `${transfer.date},${fromAccountName},${toAccountName},${transfer.amount},${desc}\n`;
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lumo-dati-${currentUser}-${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showNotification('Dati esportati con successo!', 'success');
+    }
+
+    function exportAnnualCSV() {
+      const yearSelect = document.getElementById('yearSelect');
+      const year = yearSelect ? yearSelect.value : new Date().getFullYear();
+      const user = users[currentUser];
+      
+      let csv = `Report Annuale ${year}\n\n`;
+      csv += 'Mese,Entrate,Spese,Bilancio\n';
+      
+      // Calcola per ogni mese
+      for (let month = 0; month < 12; month++) {
+        let monthlyIncome = 0;
+        let monthlyExpenses = 0;
+        
+        user.transactions.forEach(trans => {
+          const transDate = new Date(trans.date);
+          const transYear = transDate.getFullYear();
+          const transMonth = transDate.getMonth();
+          
+          if (transYear == year) {
+            if (trans.type === 'income') {
+              // Entrate: solo se la transazione è in questo mese di questo anno
+              if (transMonth === month) {
+                monthlyIncome += trans.amount;
+              }
+            } else if (trans.type === 'expense') {
+              // Spese: gestisci rateizzazioni
+              if (trans.installment && trans.installmentMonths > 0) {
+                const monthlyInstallment = trans.monthlyInstallment || (trans.amount / trans.installmentMonths);
+                
+                // Calcola il numero di mesi dalla transazione
+                const monthsSinceTransaction = (year - transYear) * 12 + (month - transMonth);
+                
+                // Se siamo nel periodo di rateizzazione per questo mese
+                if (monthsSinceTransaction >= 0 && monthsSinceTransaction < trans.installmentMonths) {
+                  monthlyExpenses += monthlyInstallment;
+                }
+              } else {
+                // Spese non rateizzate: solo se la transazione è in questo mese di questo anno
+                if (transMonth === month) {
+                  monthlyExpenses += trans.amount;
+                }
+              }
+            }
+          }
+        });
+        
+        const monthlyBalance = monthlyIncome - monthlyExpenses;
+        const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                          'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+        
+        csv += `${monthNames[month]},${monthlyIncome.toFixed(2)},${monthlyExpenses.toFixed(2)},${monthlyBalance.toFixed(2)}\n`;
+      }
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lumo-report-annuale-${year}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showNotification(`Report annuale ${year} esportato!`, 'success');
+    }
+
+    function exportUserData() {
+      const data = {
+        app: 'LUMO',
+        version: '2.2',
+        exportDate: new Date().toISOString(),
+        users: users
+      };
+      
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lumo-backup-${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showNotification('Backup esportato con successo!', 'success');
+    }
+
+    function importUserDataFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          
+          if (!data.users) {
+            throw new Error('Formato file non valido');
+          }
+          
+          if (confirm('Vuoi sovrascrivere i dati attuali con questo backup?')) {
+            users = data.users;
+            // Esegui migrazione per dati vecchi
+            migrateUserData();
+            saveUsers();
+            loadUserData();
+            showNotification('Backup importato con successo!', 'success');
+          }
+        } catch (error) {
+          showNotification('Errore nell\'importazione: ' + error.message, 'error');
+        }
+      };
+      reader.readAsText(file);
+      
+      // Reset input file
+      event.target.value = '';
+    }
+
+    // ==========================================
+    // PWA
+    // ==========================================
+    function initializePWA() {
+      let deferredPrompt;
+      
+      // REGISTRA SERVICE WORKER
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('./service-worker.js')
+            .then(function(registration) {
+              console.log('Service Worker registrato con successo:', registration.scope);
+            })
+            .catch(function(error) {
+              console.log('Registrazione Service Worker fallita:', error);
+            });
+        });
+      }
+      
+      // GESTIONE INSTALLAZIONE
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const installButton = document.getElementById('installButton');
+        if (installButton) {
+          installButton.classList.add('show');
+          
+          installButton.addEventListener('click', () => {
+            installButton.classList.remove('show');
+            deferredPrompt.prompt();
+            
+            deferredPrompt.userChoice.then((choiceResult) => {
+              if (choiceResult.outcome === 'accepted') {
+                showNotification('App installata con successo!', 'success');
+              }
+              deferredPrompt = null;
+            });
+          });
+        }
+      });
+      
+      window.addEventListener('appinstalled', () => {
+        const installButton = document.getElementById('installButton');
+        if (installButton) {
+          installButton.classList.remove('show');
+        }
+        console.log('App installata con successo!');
+      });
+    }
+
+    // ==========================================
+    // FUNZIONI PER CAMBIO PIN
+    // ==========================================
+    function showChangePin() {
+      if (confirm('Vuoi cambiare il PIN?\nDovrai inserire il PIN attuale per confermare.')) {
+        const currentPin = prompt('Inserisci il PIN attuale:');
+        if (!currentPin) return;
+        
+        // Verifica il PIN (questa funzione deve essere esposta dal sistema PIN)
+        if (window.verifyPin && window.verifyPin(currentPin)) {
+          showPinSetup(true); // true = modalità cambio PIN
+        } else {
+          showNotification('PIN non valido!', 'error');
+        }
+      }
+    }
+
+    // ==========================================
+    // ESPORTAZIONE FUNZIONI GLOBALI
+    // ==========================================
+    window.editTransaction = editTransaction;
+    window.deleteTransaction = deleteTransaction;
+    window.toggleRecurring = toggleRecurring;
+    window.deleteRecurring = deleteRecurring;
+    window.editSaving = editSaving;
+    window.deleteSaving = deleteSaving;
+    window.editCategory = editCategory;
+    window.deleteCategory = deleteCategory;
+    window.renameAccount = renameAccount;
+    window.deleteAccount = deleteAccount;
+    window.createNewUser = createNewUser;
+    window.resetTransactionForm = resetTransactionForm;
+    window.updateDashboard = updateDashboard;
+    window.forceProcessRecurring = forceProcessRecurring;
+    window.showChangePin = showChangePin;
+    window.switchTab = switchTab;
+    window.exportCSV = exportCSV;
+    window.calculateRemainingMonths = calculateRemainingMonths;
+    window.calculateRemainingCost = calculateRemainingCost;
+    window.editTransfer = editTransfer;
+    window.deleteTransfer = deleteTransfer;
+
+    console.log('LUMO - Sistema completamente inizializzato con trasferimenti e rateizzazioni corrette!');
+  </script>
+</body>
+</html>
