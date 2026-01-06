@@ -768,6 +768,31 @@
         </button>
       </div>
 
+      <!-- TOTALE SPESE FISSE -->
+      <div class="summary-cards" id="recurringTotals">
+        <div class="card red card-hover-effect">
+          <h3>Totale Spese Fisse Attive</h3>
+          <div class="amount" id="totalRecurringExpenses">€0.00</div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 5px;">
+            <span id="recurringExpensesCount">0</span> spese attive
+          </div>
+        </div>
+        <div class="card green card-hover-effect">
+          <h3>Totale Entrate Fisse Attive</h3>
+          <div class="amount" id="totalRecurringIncome">€0.00</div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 5px;">
+            <span id="recurringIncomeCount">0</span> entrate attive
+          </div>
+        </div>
+        <div class="card blue card-hover-effect">
+          <h3>Bilancio Fisso Mensile</h3>
+          <div class="amount" id="recurringNetBalance">€0.00</div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 5px;">
+            Entrate - Spese
+          </div>
+        </div>
+      </div>
+
       <!-- TABELLA SPESE FISSE -->
       <div class="table-container">
         <table>
@@ -1150,6 +1175,7 @@
           break;
         case 'recurring':
           updateRecurringTable();
+          updateRecurringTotals();
           break;
         case 'savings':
           updateSavingsTable();
@@ -1626,6 +1652,7 @@
       updateTransactionsTable();
       updateTransfersTable();
       updateRecurringTable();
+      updateRecurringTotals();
       updateSavingsTable();
       updateCategoriesTable();
       updateAccountsTable();
@@ -2574,6 +2601,7 @@
       }
       
       updateRecurringTable();
+      updateRecurringTotals();
       updateDashboard();
       
       // Reset form
@@ -2670,6 +2698,60 @@
       });
     }
 
+    // ==========================================
+    // NUOVA FUNZIONE: TOTALE SPESE FISSE
+    // ==========================================
+    function updateRecurringTotals() {
+      const user = users[currentUser];
+      let totalExpenses = 0;
+      let totalIncome = 0;
+      let expensesCount = 0;
+      let incomeCount = 0;
+      
+      user.recurring.forEach(rec => {
+        if (rec.active) {
+          if (rec.type === 'expense') {
+            totalExpenses += rec.amount;
+            expensesCount++;
+          } else if (rec.type === 'income') {
+            totalIncome += rec.amount;
+            incomeCount++;
+          }
+        }
+      });
+      
+      const netBalance = totalIncome - totalExpenses;
+      
+      // Aggiorna gli elementi HTML
+      const totalExpensesElement = document.getElementById('totalRecurringExpenses');
+      const totalIncomeElement = document.getElementById('totalRecurringIncome');
+      const recurringNetBalanceElement = document.getElementById('recurringNetBalance');
+      const recurringExpensesCountElement = document.getElementById('recurringExpensesCount');
+      const recurringIncomeCountElement = document.getElementById('recurringIncomeCount');
+      
+      if (totalExpensesElement) {
+        totalExpensesElement.textContent = `€${totalExpenses.toFixed(2)}`;
+      }
+      if (totalIncomeElement) {
+        totalIncomeElement.textContent = `€${totalIncome.toFixed(2)}`;
+      }
+      if (recurringNetBalanceElement) {
+        recurringNetBalanceElement.textContent = `€${netBalance.toFixed(2)}`;
+        // Colore dinamico in base al bilancio
+        if (netBalance >= 0) {
+          recurringNetBalanceElement.style.color = '#10B981';
+        } else {
+          recurringNetBalanceElement.style.color = '#EF4444';
+        }
+      }
+      if (recurringExpensesCountElement) {
+        recurringExpensesCountElement.textContent = expensesCount;
+      }
+      if (recurringIncomeCountElement) {
+        recurringIncomeCountElement.textContent = incomeCount;
+      }
+    }
+
     function toggleRecurring(id) {
       const user = users[currentUser];
       const recurring = user.recurring.find(r => r.id === id);
@@ -2677,6 +2759,7 @@
         recurring.active = !recurring.active;
         saveUsers();
         updateRecurringTable();
+        updateRecurringTotals();
         
         // Mostra messaggio informativo
         if (recurring.active) {
@@ -2696,6 +2779,7 @@
       user.recurring = user.recurring.filter(r => r.id !== id);
       saveUsers();
       updateRecurringTable();
+      updateRecurringTotals();
       updateDashboard();
     }
 
@@ -2882,7 +2966,7 @@
     }
 
     // ==========================================
-    // CALCOLI E STATISTICHE - VERSIONE CORRETTA
+    // CALCOLI E STATISTICHE - VERSIONE CORRETTA (FIX PER ENTRATE/USCITE)
     // ==========================================
     function calculateAccountBalance(accountId) {
       const user = users[currentUser];
@@ -2939,6 +3023,7 @@
       return balance;
     }
 
+    // FUNZIONE CORRETTA PER CALCOLARE ENTRATE E USCITE MENSILI
     function calculateMonthlyStats() {
       const user = users[currentUser];
       const now = new Date();
@@ -2948,36 +3033,33 @@
       let income = 0;
       let expenses = 0;
       
-      // Conta SOLO le transazioni reali del mese corrente (non i trasferimenti)
+      // Conta SOLO le transazioni reali del mese corrente
       user.transactions.forEach(trans => {
-        const date = new Date(trans.date);
-        const transMonth = date.getMonth();
-        const transYear = date.getFullYear();
+        const transDate = new Date(trans.date);
+        const transMonth = transDate.getMonth();
+        const transYear = transDate.getFullYear();
         
-        if (transYear === currentYear) {
+        // Verifica se la transazione è nel mese corrente
+        if (transYear === currentYear && transMonth === currentMonth) {
           if (trans.type === 'income') {
-            // Entrate: solo se la transazione è in questo mese
-            if (transMonth === currentMonth) {
-              income += trans.amount;
-            }
+            // Per entrate: aggiungi sempre l'intero importo
+            income += trans.amount;
           } else if (trans.type === 'expense') {
-            // PER LE SPESE RATEIZZATE: usa la rata mensile invece dell'importo totale
+            // Per spese: gestisci diversamente se è rateizzata o meno
             if (trans.installment && trans.installmentMonths > 0) {
-              // Calcola la rata mensile
+              // Per spese rateizzate: calcola solo la rata mensile
               const monthlyInstallment = trans.monthlyInstallment || (trans.amount / trans.installmentMonths);
               
-              // Determina se questa transazione contribuisce al mese corrente
+              // Calcola quanti mesi sono passati dalla transazione
               const monthsSinceTransaction = (currentYear - transYear) * 12 + (currentMonth - transMonth);
               
-              // La transazione contribuisce solo se siamo entro il periodo di rateizzazione
+              // Se siamo nel periodo di rateizzazione
               if (monthsSinceTransaction >= 0 && monthsSinceTransaction < trans.installmentMonths) {
                 expenses += monthlyInstallment;
               }
             } else {
-              // Per spese non rateizzate, solo se la transazione è in questo mese
-              if (transMonth === currentMonth) {
-                expenses += trans.amount;
-              }
+              // Per spese non rateizzate: aggiungi l'intero importo
+              expenses += trans.amount;
             }
           }
         }
@@ -3019,9 +3101,9 @@
       const categoryExpenses = {};
       
       user.transactions.forEach(trans => {
-        const date = new Date(trans.date);
-        const transMonth = date.getMonth();
-        const transYear = date.getFullYear();
+        const transDate = new Date(trans.date);
+        const transMonth = transDate.getMonth();
+        const transYear = transDate.getFullYear();
         
         if (transYear === currentYear && trans.type === 'expense') {
           // PER LE SPESE RATEIZZATE: usa la rata mensile invece dell'importo totale
@@ -3056,6 +3138,10 @@
       // Calcola totali
       const totalBalance = calculateTotalBalance();
       const monthlyStats = calculateMonthlyStats();
+      
+      // DEBUG: log per verificare i calcoli
+      console.log('Statistiche mensili calcolate:', monthlyStats);
+      console.log('Transazioni totali:', user.transactions.length);
       
       // Aggiorna card principali
       const totalBalanceElement = document.getElementById('totalBalance');
